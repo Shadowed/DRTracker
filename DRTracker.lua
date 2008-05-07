@@ -2,13 +2,19 @@ DRTracker = LibStub("AceAddon-3.0"):NewAddon("DRTracker", "AceEvent-3.0")
 
 local L = DRTrackerLocals
 
+local SML
 local instanceType
+
+local expirationTime = {}
+local currentDRList = {}
+local auraDuration = {}
+local spellCalibration = { [0] = {}, [0.25] = {}, [0.50] = {}, [1.0] = {} }
 
 function DRTracker:OnInitialize()
 	self.defaults = {
 		profile = {
 			scale = 1.0,
-			width = 180
+			width = 180,
 			redirectTo = "Spellbreak",
 			locked = true,
 			
@@ -18,12 +24,16 @@ function DRTracker:OnInitialize()
 
 	self.db = LibStub:GetLibrary("AceDB-3.0"):New("DRTrackerDB", self.defaults)
 
-	self.SML = LibStub:GetLibrary("LibSharedMedia-3.0")
 	self.revision = tonumber(string.match("$Revision: 678 $", "(%d+)") or 1)
+	self.spells = DRTrackerSpells
+	self.spellAbbrevs = DRTrackerAbbrevs
+	self.diminishID = DRTrackerDiminishID
+
+	SML = LibStub:GetLibrary("LibSharedMedia-3.0")
+	
 
 	GTBLib = LibStub:GetLibrary("GTB-Beta1")
 	GTBGroup = GTBLib:RegisterGroup("DRTracker", SML:Fetch(SML.MediaType.STATUSBAR, self.db.profile.texture))
-	GTBGroup:RegisterOnFade(self, "OnBarFade")
 	GTBGroup:SetScale(self.db.profile.scale)
 	GTBGroup:SetWidth(self.db.profile.width)
 	GTBGroup:SetDisplayGroup(self.db.profile.redirectTo ~= "" and self.db.profile.redirectTo or nil)
@@ -70,43 +80,122 @@ local COMBATLOG_OBJECT_AFFILIATION_MINE = COMBATLOG_OBJECT_AFFILIATION_MINE
 local COMBATLOG_OBJECT_AFFILIATION_PARTY = COMBATLOG_OBJECT_AFFILIATION_PARTY
 local COMBATLOG_OBJECT_AFFILIATION_RAID = COMBATLOG_OBJECT_AFFILIATION_RAID
 local COMBATLOG_OBJECT_REACTION_HOSTILE	= COMBATLOG_OBJECT_REACTION_HOSTILE
-local GROUP_AFFILIATION = bit.bor(COMBATLOG_OBJECT_AFFILIATION_PARTY, COMBATLOG_OBJECT_AFFILIATION_RAID, COMBATLOG_OBJECT_AFFILIATION_MINE)
+local CombatLog_Object_IsAll = CombatLog_Object_IsAll
 
-local eventRegistered = {["SPELL_INTERRUPT"] = true, ["SPELL_CAST_SUCCESS"] = true, ["SPELL_AURA_APPLIED"] = true, ["SPELL_AURA_REMOVED"] = true, ["SPELL_SUMMON"] = true, ["SPELL_CREATE"] = true, ["SPELL_DISPEL_FAILED"] = true, ["SPELL_PERIODIC_DISPEL_FAILED"] = true, ["SPELL_AURA_DISPELLED"] = true, ["SPELL_AURA_STOLEN"] = true, ["PARTY_KILL"] = true, ["UNIT_DIED"] = true}
+local eventRegistered = {["SPELL_AURA_APPLIED"] = true, ["SPELL_AURA_REMOVED"] = true, ["PARTY_KILL"] = true, ["UNIT_DIED"] = true}
 function DRTracker:COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, eventType, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, ...)
-	if( not eventRegistered[eventType] ) then
+	if( not eventRegistered[eventType] or not CombatLog_Object_IsAll(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) ) then
+		return
+	end
+		
+	-- Enemy gained a debuff
+	if( eventType == "SPELL_AURA_APPLIED" ) then
+		local spellID, spellName, spellSchool, auraType = ...
+		if( auraType == "DEBUFF" ) then
+			self:AuraGained(spellID, spellName, destName, destGUID)
+		end
+	
+	-- Buff or debuff faded from an enemy
+	elseif( eventType == "SPELL_AURA_REMOVED" ) then
+		local spellID, spellName, spellSchool, auraType = ...
+		if( auraType == "DEBUFF" ) then
+			self:AuraFaded(spellID, spellName, destName, destGUID)
+		end
+	
+	-- Don't use UNIT_DIED inside arenas due to accuracy issues, outside of arenas we don't care too much
+	elseif( ( instanceType ~= "arena" and eventType == "UNIT_DIED" ) or eventType == "PARTY_KILL") then
+		for id in pairs(currentDRList) do
+			local spell, guid = string.split(":", id)
+			if( guid == destGUID ) then
+				GTBGroup:UnregisterBar(id)
+			end
+		end
+	end
+
+end
+
+function DRTracker:AuraGained(spellID, spellName, destName, destGUID)
+	if( not self.spells[spellID] ) then
 		return
 	end
 	
-	local isDestEnemy = (bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE)
-	local isSourceEnemy = (bit.band(sourceFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE)
-
-	-- Enemy gained a debuff
-	if( eventType == "SPELL_AURA_APPLIED" and isDestEnemy ) then
-		local spellID, spellName, spellSchool, auraType = ...
-		
-	-- Buff or debuff faded from an enemy
-	elseif( eventType == "SPELL_AURA_REMOVED" and isDestEnemy ) then
-		local spellID, spellName, spellSchool, auraType = ...
-
-	-- Spell casted succesfully
-	elseif( eventType == "SPELL_CAST_SUCCESS" and isSourceEnemy ) then
-		local spellID, spellName, spellSchool, auraType = ...
+	-- Figure out when the last spell was used
+	local id = self.diminishID[spellID] .. ":" .. destGUID
+	local time = GetTime()
+	local diminished = 1.0
 	
-	-- Check if we should clear timers
-	elseif( eventType == "PARTY_KILL" and isDestEnemy ) then
+	-- Already had this spell used on them within 15 seconds
+	if( expirationTime[id] and expirationTime[id] >= time ) then
+		if( currentDRList[id] == 1 ) then
+			diminished = 0.50
+		elseif( currentDRList[id] == 0.50 ) then
+			diminished = 0.25
+		else
+			diminished = 0
+		end
+		
+		currentDRList[id] = diminished
+		
+		local nextDR = diminished
+		if( nextDR == 0.50 ) then
+			nextDR = 0.25
+		elseif( nextDR == 0.25 ) then
+			nextDR = 0
+		end
+		
+		GTBGroup:RegisterBar(id .. ":dr", 15, string.format("[DR %d%%] %s - %s", nextDR * 100, self.spellAbbrevs[spellName] or spellName, destName), (select(3, GetSpellInfo(spellID))))
+		
+	-- Nothing started yet, so start us off at 100%
+	elseif( not expirationTime[id] or expirationTime[id] <= time) then
+		currentDRList[id] = diminished
+	end
+	
+	-- Tries to do some basic spell calibration
+	auraDuration[id] = GetTime()
+	
+	local seconds = self.spells[spellID] * diminished
+	if( spellCalibration[diminished][spellID] ) then
+		seconds = spellCalibration[diminished][spellID]
 
-	-- Don't use UNIT_DIED inside arenas due to accuracy issues, outside of arenas we don't care too much
-	elseif( instanceType ~= "arena" and eventType == "UNIT_DIED" and isDestEnemy ) then
+	end
+	
+	GTBGroup:SetTexture(SML:Fetch(SML.MediaType.STATUSBAR, self.db.profile.texture))
+	GTBGroup:RegisterBar(id .. spellID, seconds, string.format("%s - %s", self.spellAbbrevs[spellName] or spellName, destName), (select(3, GetSpellInfo(spellID))))
+end
+
+function DRTracker:AuraFaded(spellID, spellName, destName, destGUID)
+	if( not self.spells[spellID] ) then
+		return
+	end
+	
+	local id = self.diminishID[spellID] .. ":" .. destGUID
+	expirationTime[id] = GetTime() + 15
+		
+	if( currentDRList[id] ) then
+		local nextDR = currentDRList[id]
+		if( nextDR == 1.0 ) then
+			nextDR = 0.50
+		elseif( nextDR == 0.50 ) then
+			nextDR = 0.25
+		else
+			nextDR = 0
+		end
+
+		GTBGroup:RegisterBar(id .. ":dr", 15, string.format("[DR %d%%] %s - %s", nextDR * 100, self.spellAbbrevs[spellName] or spellName, destName), (select(3, GetSpellInfo(spellID))))
 	end
 
-end
+	GTBGroup:UnregisterBar(id .. spellID)
+	
+	if( auraDuration[id] ) then
+		local timeSpent = GetTime() - auraDuration[id]
+		local offBy = (self.spells[spellID] * currentDRList[id]) - timeSpent
 
-function DRTracker:TriggerTimer(spellID, spellName, sourceName, sourceGUID, destName, destGUID)
-	--GTBGroup:SetTexture(SML:Fetch(SML.MediaType.STATUSBAR, self.db.profile.texture))
-	--GTBGroup:RegisterBar(id, seconds, string.format("%s - %s", school.text, destName), school.icon)
+		
+		if( offBy <= 0.60 and offBy > 0 ) then
+			spellCalibration[currentDRList[id]][spellID] = timeSpent
+		end
+	end
 end
-
 
 -- See if we should enable Afflicted in this zone
 function DRTracker:ZONE_CHANGED_NEW_AREA()
