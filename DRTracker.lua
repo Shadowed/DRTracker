@@ -175,12 +175,12 @@ end
 
 function DRTracker:AuraFaded(spellID, spellName, destName, destGUID)
 	local id = self.diminishID[spellID] .. ":" .. destGUID
-	expirationTime[id] = GetTime() + 15
-		
 	if( currentDRList[id] ) then
-		runningSpells[spellID .. destGUID] = nil
 		GTBGroup:RegisterBar(id .. ":dr", 15, string.format("[DR %d%%] %s - %s", self:GetNextDR(currentDRList[id]) * 100, self.spellAbbrevs[spellName] or spellName, destName), (select(3, GetSpellInfo(spellID))))
 	end
+
+	runningSpells[spellID .. ":" .. destGUID] = nil
+	expirationTime[id] = GetTime() + 15
 end
 
 -- See if we should enable Afflicted in this zone
