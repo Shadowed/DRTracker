@@ -1,5 +1,21 @@
 DRTrackerLocals = {
 	["ALT + Drag to move the frame anchor."] = "ALT + Drag to move the frame anchor.",
+	
+	-- DR types
+	["disorient"] = "Disorients",
+	["fear"] = "Fears",
+	["ctrlstun"] = "Control Stuns",
+	["rndstun"] = "Rand Stuns",
+	["cyclone"] = "Physical CC",
+	["ks"] = "Kidney Shot",
+	["imphs"] = "Imp Ham",
+	["chastise"] = "Chastise",
+	["scatters"] = "Scatter S",
+	["freezetrap"] = "Freeze T",
+	["dc"] = "Death Coil",
+	["entroots"] = "Ent Roots",
+	["hibernate"] = "Hibernate",
+	["poly"] = "Polymorph",
 
 	-- Spell abbreviations
 	["Ent Roots"] = "Ent Roots",

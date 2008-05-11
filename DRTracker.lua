@@ -29,8 +29,8 @@ function DRTracker:OnInitialize()
 
 	self.revision = tonumber(string.match("$Revision: 678 $", "(%d+)") or 1)
 	self.spells = DRTrackerSpells
+	self.icons = DRTrackerIcons
 	self.spellAbbrevs = DRTrackerAbbrevs
-	self.diminishID = DRTrackerDiminishID
 
 	self:CreateAnchor()
 
@@ -115,7 +115,7 @@ function DRTracker:COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, eventType, sour
 	-- Enemy gained a debuff
 	if( eventType == "SPELL_AURA_APPLIED" and bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE ) then
 		local spellID, spellName, spellSchool, auraType = ...
-		if( auraType == "DEBUFF" and self.spells[spellID] and not self.db.profile.disableSpells[spellName] ) then
+		if( auraType == "DEBUFF" and self.spells[spellID] ) then
 			spellMap[spellName .. (select(2, GetSpellInfo(spellID)))] = spellID
 			self:AuraGained(spellID, spellName, destName, destGUID)
 		end
@@ -123,7 +123,7 @@ function DRTracker:COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, eventType, sour
 	-- Buff or debuff faded from an enemy
 	elseif( eventType == "SPELL_AURA_REMOVED" and bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE ) then
 		local spellID, spellName, spellSchool, auraType = ...
-		if( auraType == "DEBUFF" and self.spells[spellID] and not self.db.profile.disableSpells[spellName] ) then
+		if( auraType == "DEBUFF" and self.spells[spellID] ) then
 			self:AuraFaded(spellID, spellName, destName, destGUID)
 		end
 		
@@ -141,7 +141,7 @@ end
 
 function DRTracker:TimerFound(spellName, spellRank, destName, destGUID, icon, timeLeft)
 	local spellID = spellMap[spellName .. spellRank]
-	if( spellID ) then
+	if( spellID and not self.db.profile.disableSpells[spellName] ) then
 		local id = spellID .. ":" .. destGUID
 		
 		-- This is a quick hack, need to add a startSeconds or a TimerExists API to GTB
@@ -156,27 +156,34 @@ end
 
 function DRTracker:AuraGained(spellID, spellName, destName, destGUID)
 	-- Figure out when the last spell was used
-	local id = self.diminishID[spellID] .. ":" .. destGUID
+	local id = self.spells[spellID] .. ":" .. destGUID
 	local time = GetTime()
-	local diminished = 1.0
+	local diminished = 100
 	
 	-- Already had this spell used on them within 15 seconds
 	if( expirationTime[id] and expirationTime[id] >= time ) then
 		diminished = self:GetNextDR(currentDRList[id])
 		currentDRList[id] = diminished
 		
-		GTBGroup:RegisterBar(id .. ":dr", 15, string.format("[DR %d%%] %s - %s", self:GetNextDR(diminished) * 100, self.spellAbbrevs[spellName] or spellName, destName), (select(3, GetSpellInfo(spellID))))
+		if( not self.db.profile.disableSpells[spellName] ) then
+			local icon = self.icons[self.spells[spellID]] or (select(3, GetSpellInfo(spellID)))
+			GTBGroup:RegisterBar(id .. ":dr", 15, string.format("[DR %d%%] %s - %s", self:GetNextDR(diminished), L[self.spells[spellID]] or self.spells[spellID], destName), icon)
+		end
 		
 	-- Nothing started yet or it's been over 15 seconds, so start us off at 100%
 	elseif( not expirationTime[id] or expirationTime[id] <= time ) then
 		currentDRList[id] = diminished
+		
+		-- Set it here in case a spell of the same DR category is used before this one fades
+		expirationTime[id] = GetTime() + 15
 	end
 end
 
 function DRTracker:AuraFaded(spellID, spellName, destName, destGUID)
-	local id = self.diminishID[spellID] .. ":" .. destGUID
-	if( currentDRList[id] ) then
-		GTBGroup:RegisterBar(id .. ":dr", 15, string.format("[DR %d%%] %s - %s", self:GetNextDR(currentDRList[id]) * 100, self.spellAbbrevs[spellName] or spellName, destName), (select(3, GetSpellInfo(spellID))))
+	local id = self.spells[spellID] .. ":" .. destGUID
+	if( currentDRList[id] and not self.db.profile.disableSpells[spellName] ) then
+		local icon = self.icons[self.spells[spellID]] or (select(3, GetSpellInfo(spellID)))
+		GTBGroup:RegisterBar(id .. ":dr", 15, string.format("[DR %d%%] %s - %s", self:GetNextDR(currentDRList[id]), L[self.spells[spellID]] or self.spells[spellID], destName), icon)
 	end
 
 	runningSpells[spellID .. ":" .. destGUID] = nil
@@ -204,10 +211,10 @@ function DRTracker:Print(msg)
 end
 
 function DRTracker:GetNextDR(dr)
-	if( dr == 1 ) then
-		return 0.50
-	elseif( dr == 0.50 ) then
-		return 0.25
+	if( dr == 100 ) then
+		return 50
+	elseif( dr == 50 ) then
+		return 25
 	end
 	
 	return 0
@@ -241,7 +248,7 @@ function DRTracker:CreateAnchor()
 	self.anchor:SetScript("OnEnter", showTooltip)
 	self.anchor:SetScript("OnLeave", hideTooltip)
 	self.anchor:SetScript("OnMouseDown", function(self)
-		if( not DRTracker.db.profile.showAnchor and IsAltKeyDown() ) then
+		if( DRTracker.db.profile.showAnchor and IsAltKeyDown() ) then
 			self.isMoving = true
 			self:StartMoving()
 		end

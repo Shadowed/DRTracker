@@ -1,168 +1,175 @@
 DRTrackerSpells = { 
-	-- Entangling Roots
-	[339] = true,
-	[1062] = true,
-	[5195] = true,
-	[5196] = true,
-	[9852] = true,
-	[9853] = true,
-	[26989] = true,
-	
-	-- Cyclone
-	[33786] = true,
-	
-	-- Hibernate
-	[2637] = true,
-	[18657] = true,
-	[18658] = true,
-	
-	-- Polymorph
-	[118] = true,
-	[12824] = true,
-	[12825] = true,
-	[28272] = true,
-	[28271] = true,
-	[12826] = true,
-	
-	-- Hammer of Justice
-	[853] = true,
-	[5588] = true,
-	[5589] = true,
-	[10308] = true,
-	
-	-- Psychic scream
-	[8122] = true,
-	[8124] = true,
-	[10888] = true,
-	[10890] = true,
-	
+	--[[ DISORIENTS ]]--
+	-- Maim
+	[22570] = "disorient",
+
 	-- Sap
-	[6770] = true,
-	[2070] = true,
-	[11297] = true,
+	[6770] = "disorient",
+	[2070] = "disorient",
+	[11297] = "disorient",
 	
 	-- Gouge
-	[1776] = true,
-	[1777] = true,
-	[8629] = true,
-	[11285] = true,
-	[11286] = true,
-	[38764] = true,
-	
-	-- Blind
-	[2094] = true,
-	
-	-- Cheap Shot
-	[1833] = true,
-
-	-- Kidney Shot
-	[408] = true,
-	[8643] = true,
-	
+	[1776] = "disorient",
+	[1777] = "disorient",
+	[8629] = "disorient",
+	[11285] = "disorient",
+	[11286] = "disorient",
+	[38764] = "disorient",
+		
+	--[[ FEARS ]]--
 	-- Fear (Warlock)
-	[5782] = true,
-	[6213] = true,
-	[6215] = true,
+	[5782] = "fear",
+	[6213] = "fear",
+	[6215] = "fear",
 	
 	-- Seduction (Pet)
-	[6358] = true,
+	[6358] = "fear",
 	
 	-- Howl of Terror
-	[5484] = true,
-	[17928] = true,
-	
-	-- Charge
-	[7922] = true,
-	
-	-- Intercept
-	[20253] = true,
-	[20614] = true,
-	[20615] = true,
-	[25273] = true,
-	[25274] = true,
-	
-	-- Improved Hamstring
-	[23694] = true,
-}
+	[5484] = "fear",
+	[17928] = "fear",
 
--- spellID's that share the same diminishing returns, like Sap and Gouge
-DRTrackerDiminishID = {
-	-- Entangling Roots
-	[339] = 1,
-	[1062] = 1,
-	[5195] = 1,
-	[5196] = 1,
-	[9852] = 1,
-	[9853] = 1,
-	[26989] = 1,
+	-- Psychic scream
+	[8122] = "fear",
+	[8124] = "fear",
+	[10888] = "fear",
+	[10890] = "fear",
+	
+	-- Intimidating Shout
+	[5246] = "fear",
+		
+	--[[ CONTROL STUNS ]]--
+	-- Hammer of Justice
+	[853] = "ctrlstun",
+	[5588] = "ctrlstun",
+	[5589] = "ctrlstun",
+	[10308] = "ctrlstun",
+
+	-- Bash
+	[5211] = "ctrlstun",
+	[6798] = "ctrlstun",
+	[8983] = "ctrlstun",
+	
+	-- Pounce
+	[9005] = "ctrlstun",
+	[9823] = "ctrlstun",
+	[9827] = "ctrlstun",
+	[27006] = "ctrlstun",
+	
+	-- Intimidation
+	[19577] = "ctrlstun",
+
+	-- Charge
+	[7922] = "ctrlstun",
+
+	-- Cheap Shot
+	[1833] = "ctrlstun",
+
+	-- War Stomp
+	[20549] = "ctrlstun",
+
+	-- Intercept
+	[20253] = "ctrlstun",
+	[20614] = "ctrlstun",
+	[20615] = "ctrlstun",
+	[25273] = "ctrlstun",
+	[25274] = "ctrlstun",
+	
+	-- Shadowfury
+	[30283] = "ctrlstun", 
+	[30413] = "ctrlstun",
+	[30414] = "ctrlstun",
+
+	--[[ RANDOM STUNS ]]--
+	-- Starfire Stun
+	[16922] = "rndstun",
+	
+	-- Mace Stun
+	[5530] = "rndstun",
+	
+	-- Stormherald/Deep Thunder
+	[34510] = "rndstun",
+	
+	-- Seal of Justice
+	[20170] = "rndstun",
+	
+	-- Blackout
+	[15269] = "rndstun",
+	
+	-- Impact
+	[12355] = "rndstun",
+	
+	--[[ CYCLONE ]]--
+	-- Blind
+	[2094] = "cyclone",
 	
 	-- Cyclone
-	[33786] = 2,
+	[33786] = "cyclone",
+	
+	--[[ MISC ]]--
+	-- Chastise (Maybe this shares DR with Imp HS?)
+	[44041] = "chastise",
+	[44043] = "chastise",
+	[44044] = "chastise",
+	[44045] = "chastise",
+	[44046] = "chastise",
+	[44047] = "chastise",
 
-	-- Sap + Gouge
-	[6770] = 2,
-	[2070] = 2,
-	[11297] = 2,
-	[1776] = 2,
-	[1777] = 2,
-	[8629] = 2,
-	[11285] = 2,
-	[11286] = 2,
-	[38764] = 2,
+	-- Scatter Shot
+	[19503] = "scatters",
+	
+	-- Freezing Trap
+	[3355] = "freezetrap",
+	[14308] = "freezetrap",
+	[14309] = "freezetrap",
+	
+	-- Improved Conc Shot
+	[19410] = "impconc",
+	[22915] = "impconc",
+	[28445] = "impconc",
+	
+	-- Death Coil
+	[6789] = "dc",
+	[17925] = "dc",
+	[17926] = "dc",
+	[27223] = "dc",
 
+	-- Kidney Shot
+	[408] = "ks",
+	[8643] = "ks",
+
+	-- Improved Hamstring
+	[23694] = "imphs",
+
+	-- Entangling Roots
+	[339] = "entroots",
+	[1062] = "entroots",
+	[5195] = "entroots",
+	[5196] = "entroots",
+	[9852] = "entroots",
+	[9853] = "entroots",
+	[26989] = "entroots",
+		
 	-- Hibernate
-	[2637] = 3,
-	[18657] = 3,
-	[18658] = 3,
+	[2637] = "hibernate",
+	[18657] = "hibernate",
+	[18658] = "hibernate",
 	
 	-- Polymorph
-	[118] = 4,
-	[12824] = 4,
-	[12825] = 4,
-	[28272] = 4,
-	[28271] = 4,
-	[12826] = 4,
-	
-	-- Hammer of Justice
-	[853] = 5,
-	[5588] = 5,
-	[5589] = 5,
-	[10308] = 5,
-	
-	-- Psychic scream
-	[8122] = 6,
-	[8124] = 6,
-	[10888] = 6,
-	[10890] = 6,
-	
-	-- Cheap Shot
-	[1833] = 7,
-	
-	-- Kidney Shot
-	[408] = 8,
-	[8643] = 8,
+	[118] = "poly",
+	[12824] = "poly",
+	[12825] = "poly",
+	[28272] = "poly",
+	[28271] = "poly",
+	[12826] = "poly",
+		
+}
 
-	-- Fear + Seduction + Howl of Terror
-	[5782] = 9,
-	[6213] = 9,
-	[6215] = 9,
-	[6358] = 9,
-	[5484] = 9,
-	[17928] = 9,
-
-	-- Charge + Intercept
-	[7922] = 10,
-	[20253] = 10,
-	[20614] = 10,
-	[20615] = 10,
-	[25273] = 10,
-	[25274] = 10,
-	
-	-- Improved Hamstring
-	[23694] = 11,
-	
-	-- Blind
-	[2094] = 12,
+DRTrackerIcons = {
+	["rndstun"] = "Interface\\Icons\\INV_Mace_02",
+	["ctrlstun"] = "Interface\\Icons\\Spell_Frost_FrozenCore",
+	["fear"] = "Interface\\Icons\\Spell_Shadow_Possession",
+	["disorient"] = "Interface\\Icons\\Ability_Gouge",
 }
 
 local L = DRTrackerLocals
