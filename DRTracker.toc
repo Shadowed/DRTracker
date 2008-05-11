@@ -6,7 +6,7 @@
 ## SavedVariables: DRTrackerDB
 ## OptionalDeps: LibStub, GTB, Ace3, LibSharedMedia-3.0
 
-libs\LibStub-1.0\LibStub-1.0.xml
+libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
 libs\AceAddon-3.0\AceAddon-3.0.xml
 libs\AceEvent-3.0\AceEvent-3.0.xml
