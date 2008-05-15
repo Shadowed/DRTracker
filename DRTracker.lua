@@ -87,7 +87,6 @@ end
 
 function DRTracker:ScanUnit(unit)
 	local destName = UnitName(unit)
-
 	local destGUID = UnitGUID(unit)
 	
 	local id = 0
@@ -269,8 +268,6 @@ function DRTracker:CreateAnchor()
 			
 			DRTracker.db.profile.position.x = x
 			DRTracker.db.profile.position.y = y
-			
-			GTBGroup:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x, y)
 		end
 	end)	
 	
@@ -280,7 +277,7 @@ function DRTracker:CreateAnchor()
 	
 	if( self.db.profile.position ) then
 		local scale = self.anchor:GetEffectiveScale()
-		self.anchor:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", self.db.profile.position.x * scale, self.db.profile.position.y * scale)
+		self.anchor:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", self.db.profile.position.x / scale, self.db.profile.position.y / scale)
 	else
 		self.anchor:SetPoint("CENTER", UIParent, "CENTER")
 	end
