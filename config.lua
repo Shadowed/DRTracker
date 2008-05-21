@@ -126,12 +126,20 @@ local function loadOptions()
 		handler = Config,
 		args = {
 			enabled = {
-				order = 1,
+				order = 0,
 				type = "toggle",
 				name = L["Show anchor"],
 				desc = L["Display timer anchor for moving around."],
-				width = "double",
+				width = "full",
 				arg = "showAnchor",
+			},
+			showTimers = {
+				order = 1,
+				type = "toggle",
+				name = L["Show spell timers"],
+				desc = L["Enables showing the time left on spells, if you disable this then DR will still be tracked and displayed."],
+				width = "full",
+				arg = "showSpells",
 			},
 			scale = {
 				order = 2,
@@ -140,7 +148,6 @@ local function loadOptions()
 				desc = L["How big the actual timers should be."],
 				min = 0, max = 2, step = 0.1,
 				set = setNumber,
-				width = "double",
 				arg = "scale",
 			},
 			barWidth = {
@@ -149,7 +156,6 @@ local function loadOptions()
 				name = L["Bar width"],
 				min = 0, max = 300, step = 1,
 				set = setNumber,
-				width = "double",
 				arg = "width",
 			},
 			barName = {
@@ -157,7 +163,6 @@ local function loadOptions()
 				type = "select",
 				name = L["Bar texture"],
 				values = "GetTextures",
-				width = "double",
 				arg = "texture",
 			},
 			location = {
@@ -166,7 +171,6 @@ local function loadOptions()
 				name = L["Redirect bars to group"],
 				desc = L["Group name to redirect bars to, this lets you show DRTracker timers under another addons bar group. Requires the bars to be created using GTB."],
 				values = "GetGroups",
-				width = "double",
 				arg = "redirectTo",
 			},
 			enabledIn = {
@@ -177,7 +181,7 @@ local function loadOptions()
 				values = enabledIn,
 				set = setMulti,
 				get = getMulti,
-				width = "double",
+				width = "full",
 				arg = "inside"
 			},
 		},

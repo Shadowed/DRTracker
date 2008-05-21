@@ -10,6 +10,8 @@ local currentDRList = {}
 local spellMap = {}
 local runningSpells = {}
 
+local DR_RESET_SECONDS = 20
+
 function DRTracker:OnInitialize()
 	self.defaults = {
 		profile = {
@@ -18,6 +20,7 @@ function DRTracker:OnInitialize()
 			redirectTo = "",
 			texture = "BantoBar",
 			showAnchor = false,
+			showSpells = true,
 			
 			disableSpells = {},
 			
@@ -62,43 +65,13 @@ function DRTracker:OnEnable()
 	end
 	
 	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-	self:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
-	self:RegisterEvent("PLAYER_FOCUS_CHANGED")
-	self:RegisterEvent("PLAYER_TARGET_CHANGED")
-	self:RegisterEvent("UNIT_AURA")
-end
-
--- Timer scanning
-function DRTracker:UNIT_AURA(event, unit)
-	self:ScanUnit(unit)
-end
-
-function DRTracker:PLAYER_TARGET_CHANGED()
-	self:ScanUnit("target")
-end
-
-function DRTracker:PLAYER_FOCUS_CHANGED()
-	self:ScanUnit("focus")
-end
-
-function DRTracker:UPDATE_MOUSEOVER_UNIT()
-	self:ScanUnit("mouseover")
-end
-
-function DRTracker:ScanUnit(unit)
-	local destName = UnitName(unit)
-	local destGUID = UnitGUID(unit)
 	
-	local id = 0
-	while( true ) do
-		id = id + 1
-		local name, rank, texture, _, _, startSeconds, timeLeft = UnitDebuff(unit, id)
-		if( not name ) then break end
 
-		
-		if( startSeconds and timeLeft ) then
-			self:TimerFound(name, rank, destName, destGUID, texture, timeLeft)
-		end
+	if( self.db.profile.showSpells ) then
+		self:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
+		self:RegisterEvent("PLAYER_FOCUS_CHANGED")
+		self:RegisterEvent("PLAYER_TARGET_CHANGED")
+		self:RegisterEvent("UNIT_AURA")
 	end
 end
 
@@ -159,22 +132,22 @@ function DRTracker:AuraGained(spellID, spellName, destName, destGUID)
 	local time = GetTime()
 	local diminished = 100
 	
-	-- Already had this spell used on them within 15 seconds
+	-- Already had this spell used on them within X seconds
 	if( expirationTime[id] and expirationTime[id] >= time ) then
 		diminished = self:GetNextDR(currentDRList[id])
 		currentDRList[id] = diminished
 		
 		if( not self.db.profile.disableSpells[spellName] ) then
 			local icon = self.icons[self.spells[spellID]] or (select(3, GetSpellInfo(spellID)))
-			GTBGroup:RegisterBar(id .. ":dr", 15, string.format("[DR %d%%] %s - %s", self:GetNextDR(diminished), L[self.spells[spellID]] or self.spells[spellID], destName), icon)
+			GTBGroup:RegisterBar(id .. ":dr", DR_RESET_SECONDS, string.format("[%d%%] %s - %s", self:GetNextDR(diminished), L[self.spells[spellID]] or self.spells[spellID], destName), icon)
 		end
 		
-	-- Nothing started yet or it's been over 15 seconds, so start us off at 100%
+	-- Nothing started yet or it's been over X seconds, so start us off at 100%
 	elseif( not expirationTime[id] or expirationTime[id] <= time ) then
 		currentDRList[id] = diminished
 		
 		-- Set it here in case a spell of the same DR category is used before this one fades
-		expirationTime[id] = GetTime() + 15
+		expirationTime[id] = GetTime() + DR_RESET_SECONDS
 	end
 end
 
@@ -182,11 +155,44 @@ function DRTracker:AuraFaded(spellID, spellName, destName, destGUID)
 	local id = self.spells[spellID] .. ":" .. destGUID
 	if( currentDRList[id] and not self.db.profile.disableSpells[spellName] ) then
 		local icon = self.icons[self.spells[spellID]] or (select(3, GetSpellInfo(spellID)))
-		GTBGroup:RegisterBar(id .. ":dr", 15, string.format("[DR %d%%] %s - %s", self:GetNextDR(currentDRList[id]), L[self.spells[spellID]] or self.spells[spellID], destName), icon)
+		GTBGroup:RegisterBar(id .. ":dr", DR_RESET_SECONDS, string.format("[%d%%] %s - %s", self:GetNextDR(currentDRList[id]), L[self.spells[spellID]] or self.spells[spellID], destName), icon)
 	end
 
 	runningSpells[spellID .. ":" .. destGUID] = nil
-	expirationTime[id] = GetTime() + 15
+	expirationTime[id] = GetTime() + DR_RESET_SECONDS
+end
+
+-- Timer scanning
+function DRTracker:UNIT_AURA(event, unit)
+	self:ScanUnit(unit)
+end
+
+function DRTracker:PLAYER_TARGET_CHANGED()
+	self:ScanUnit("target")
+end
+
+function DRTracker:PLAYER_FOCUS_CHANGED()
+	self:ScanUnit("focus")
+end
+
+function DRTracker:UPDATE_MOUSEOVER_UNIT()
+	self:ScanUnit("mouseover")
+end
+
+function DRTracker:ScanUnit(unit)
+	local destName = UnitName(unit)
+	local destGUID = UnitGUID(unit)
+	
+	local id = 0
+	while( true ) do
+		id = id + 1
+		local name, rank, texture, _, _, startSeconds, timeLeft = UnitDebuff(unit, id)
+		if( not name ) then break end
+		
+		if( startSeconds and timeLeft ) then
+			self:TimerFound(name, rank, destName, destGUID, texture, timeLeft)
+		end
+	end
 end
 
 -- See if we should enable Afflicted in this zone

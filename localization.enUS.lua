@@ -40,6 +40,9 @@ DRTrackerLocals = {
 	["Display scale"] = "Display scale",
 	["How big the actual timers should be."] = "How big the actual timers should be.",
 	
+	["Show spell timers"] = "Show spell timers",
+	["Enables showing the time left on spells, if you disable this then DR will still be tracked and displayed."] = "Enables showing the time left on spells, if you disable this then DR will still be tracked and displayed.",
+	
 	["Bar width"] = "Bar width",
 	["Bar texture"] = "Bar texture",
 
