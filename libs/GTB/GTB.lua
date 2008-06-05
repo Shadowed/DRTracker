@@ -1,5 +1,5 @@
-local major = "GTB-Beta1"
-local minor = tonumber(string.match("$Revision: 675 $", "(%d+)") or 1)
+local major = "GTB-1.0"
+local minor = tonumber(string.match("$Revision: 752 $", "(%d+)") or 1)
 
 assert(LibStub, string.format("%s requires LibStub.", major))
 
@@ -10,6 +10,8 @@ local L = {
 	["BAD_ARGUMENT"] = "bad argument #%d for '%s' (%s expected, got %s)",
 	["MUST_CALL"] = "You must call '%s' from a registered GTB object.",
 	["GROUP_EXISTS"] = "The group '%s' already exists.",
+	["BAD_FUNC"] = "You must pass an actual handler and function to '%s'.",
+	["ALT_DRAG"] = "ALT + Drag to move the frame anchor.",
 }
 
 -- Validation for passed arguments
@@ -39,8 +41,8 @@ GTB.groups = GTB.groups or {}
 
 local framePool = GTB.framePool
 local groups = GTB.groups
-local methods = {"SetBaseColor", "EnableGradient", "SetPoint", "SetScale", "SetWidth", "SetTexture", "SetBarGrowth", "SetIconPosition", "SetTextColor",
-"SetTimerColor", "SetFadeTime", "RegisterOnFade", --[["SetTextOffset", "SetTimerOffset",]] "SetDisplayGroup", "GetDisplayGroup", "RegisterBar", "UnregisterBar", "SetRepeatingTimer", "UnregisterAllBars", "RegisterOnClick", "SetBarIcon"}
+local methods = {"RegisterOnMove", "SetAnchorVisible", "SetMaxBars", "SetBaseColor", "EnableGradient", "SetPoint", "SetScale", "SetWidth", "SetTexture", "SetBarGrowth", "SetIconPosition", "SetTextColor",
+"SetTimerColor", "SetFadeTime", "RegisterOnFade", "RegisterOnClick", "SetDisplayGroup", "GetDisplayGroup", "RegisterBar", "UnregisterBar", "SetRepeatingTimer", "UnregisterAllBars", "SetBarIcon"}
 
 -- Internal functions for managing bars
 local function getFrame()
@@ -61,12 +63,14 @@ local function getFrame()
 	frame.bg:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
 	frame.bg:SetFrameLevel(0)
 	
+	--[[
 	-- None available, create a new one
 	frame.button = CreateFrame("Button", nil, frame)
     	frame.button:EnableMouse(false)
 	frame.button:SetClampedToScreen(true)
 	frame.button:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp", "Button4Up", "Button5Up")
 	frame.button:Hide()
+	]]
 
 	-- Create icon
 	frame.icon = frame:CreateTexture(nil, "ARTWORK")
@@ -104,10 +108,20 @@ local function releaseFrame(frame)
 	frame.clickHandler = nil
 	frame.clickFunc = nil
 	frame.args = nil
-	frame.fadingOut = nil
 
 	-- And now readd to the frame pool
 	table.insert(framePool, frame)	
+end
+
+local function triggerFadeCallback(group, barID)
+	if( type(group.onFadeHandler) == "table" and type(group.onFadeFunc) == "string" ) then
+		group.onFadeHandler[group.onFadeFunc](group.onFadeHandler, barID)			
+	elseif( type(group.onFadeFunc) == "string" ) then
+		local func = getglobal(group.onFadeFunc)
+		getglobal(group.onFadeFunc)(barID)
+	elseif( type(group.onFadeFunc) == "function" ) then
+		group.onFadeFunc(barID)
+	end
 end
 
 -- Fadeout OnUpdate
@@ -119,6 +133,8 @@ local function fadeOnUpdate(self, elapsed)
 	-- Done fading, hide
 	if( self.fadeTime <= 0 ) then
 		groups[self.owner]:UnregisterBar(self.barID)
+
+		triggerFadeCallback(groups[self.originalOwner], self.barID)
 		return
 	end
 		
@@ -129,23 +145,10 @@ end
 local function fadeoutBar(self)
 	local group = groups[self.owner]
 	
-	if( type(group.onFadeHandler) == "table" and type(group.onFadeFunc) == "string" and group.onFadeHandler[group.onFadeFunc] ) then
-		group.onFadeHandler[group.onFadeFunc](group.onFadeHandler, self.barID)			
-	elseif( type(group.onFadeFunc) == "string" ) then
-		local func = getglobal(group.onFadeFunc)
-		if( func ) then
-			func(self.barID)
-		end
-	elseif( type(group.onFadeFunc) == "function" and group.onFadeFunc ) then
-		group.onFadeFunc(self.barID)
-	end
-	
-	group.onFadeHandler = handler
-	group.onFadeFunc = func
-	
 	-- Don't fade at all, remove right now
 	if( group.fadeTime <= 0 ) then
 		group:UnregisterBar(self.barID)	
+		triggerFadeCallback(groups[self.originalOwner])
 		return
 	end
 	
@@ -161,7 +164,7 @@ local function barOnUpdate(self)
 	-- Check if times ran out and that we need to start fading it out
 	self.secondsLeft = self.secondsLeft - (time - self.lastUpdate)
 	self.lastUpdate = time
-	if( self.secondsLeft <= 0 and not self.fadingOut ) then
+	if( self.secondsLeft <= 0 ) then
 		-- Check if it's a repeating timer
 		local bar = groups[self.groupName].bars[self.barID]
 		if( bar.repeating ) then
@@ -173,7 +176,6 @@ local function barOnUpdate(self)
 		
 		self:SetValue(0)
 		self.spark:Hide()
-		self.fadingOut = true
 		
 		fadeoutBar(self)
 		return
@@ -219,6 +221,11 @@ end
 local function repositionFrames(group)
 	table.sort(group.usedBars, sortBars)
 
+	local offset = 0
+	if( group.iconPosition == "LEFT" ) then
+		offset = group.height
+	end
+	
 	for i, bar in pairs(group.usedBars) do
 		bar:ClearAllPoints()
 		
@@ -228,10 +235,18 @@ local function repositionFrames(group)
 			else
 				bar:SetPoint("BOTTOMLEFT", group.usedBars[i - 1], "TOPLEFT", 0, 0)
 			end
+		elseif( group.barGrowth == "UP" ) then
+			bar:SetPoint("BOTTOMLEFT", group.frame, "TOPLEFT", offset, 0)
 		else
-			bar:SetPoint(group.point, group.relativeFrame, group.relativePoint, group.xOff, group.yOff)
+			bar:SetPoint("TOPLEFT", group.frame, "BOTTOMLEFT", offset, 0)
 		end
-
+		
+		-- Did we hit the bar limit yet?
+		if( i <= group.maxBars ) then
+			bar:Show()
+		else
+			bar:Hide()
+		end
 	end
 end
 
@@ -240,12 +255,53 @@ end
 ------------------------
 
 -- Register a new group
-function GTB:RegisterGroup(name, texture, ...)
+local backdrop = {bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+		edgeFile = "Interface\\ChatFrame\\ChatFrameBackground", edgeSize = 0.80,
+		insets = {left = 1, right = 1, top = 1, bottom = 1}}
+
+-- Dragging functions
+local function OnDragStart(self)
+	if( IsAltKeyDown() ) then
+		self.isMoving = true
+		self:StartMoving()
+	end
+end
+
+local function OnDragStop(self)
+	if( self.isMoving ) then
+		self.isMoving = nil
+		self:StopMovingOrSizing()
+
+		--local scale = self:GetEffectiveScale()
+		--local x, y = self:GetLeft() * scale, self:GetTop() * scale
+		local x, y = self:GetLeft(), self:GetTop()
+
+		local group = groups[self.name]
+		if( group.onMoveHandler and group.onMoveFunc ) then
+			group.onMoveHandler[group.onMoveFunc](group.onMoveHandler, self, x, y)			
+		elseif( type(group.onMoveFunc) == "string" ) then
+			getglobal(group.onMoveFunc)(self, x, y)
+		elseif( type(group.onMoveFunc) == "function" ) then
+			group.onMoveFunc(self, x, y)
+		end
+	end
+end
+
+local function OnEnter(self)
+	GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT")
+	GameTooltip:SetText(L["ALT_DRAG"], nil, nil, nil, nil, 1)
+end
+
+local function OnLeave(self)
+	GameTooltip:Hide()
+end
+
+function GTB:RegisterGroup(name, texture)
 	argcheck(name, 1, "string")
 	argcheck(texture, 2, "string")
 	assert(3, not groups[name], string.format(L["GROUP_EXISTS"], name))
 
-	local obj = {name = name, frame = CreateFrame("Frame"), texture = texture, scale = 1.0, fontSize = 11, height = 16, obj = obj, bars = {}, usedBars = {}}
+	local obj = {name = name, frame = CreateFrame("Frame", nil, UIParent), fontSize = 11, height = 16, obj = obj, bars = {}, usedBars = {}}
 	
 	-- Inject our methods
 	for _, func in pairs(methods) do
@@ -256,24 +312,42 @@ function GTB:RegisterGroup(name, texture, ...)
 	groups[name] = obj
 
 	-- Set defaults
-	obj.frame:SetHeight(1)
+	local frame = obj.frame
+	frame:SetHeight(12)
+	frame:SetMovable(true)
+	frame:EnableMouse(true)
+	frame:SetClampedToScreen(true)
+	frame:RegisterForDrag("LeftButton")
+	frame:SetBackdrop(backdrop)
+	frame:SetBackdropColor(0, 0, 0, 1.0)
+	frame:SetBackdropBorderColor(0.75, 0.75, 0.75, 1.0)
+	frame:SetScript("OnDragStart", OnDragStart)
+	frame:SetScript("OnDragStop", OnDragStop)
+	frame:SetScript("OnShow", OnShow)
+	frame:SetScript("OnEnter", OnEnter)
+	frame:SetScript("OnLeave", OnLeave)
+	frame.name = name
 	
-	if( select("#", ...) > 0 ) then
-		obj:SetPoint(...)
-	else
-		obj:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-	end
+	-- Display name
+	frame.text = frame:CreateFontString(nil, "OVERLAY")
+	frame.text:SetPoint("CENTER", frame)
+	frame.text:SetFontObject(GameFontHighlightSmall)
+	frame.text:SetText(name)
 	
 	obj:SetScale(1.0)
 	obj:SetWidth(200)
 	obj:SetFadeTime(0.25)
+	obj:SetMaxBars(20)
 	obj:EnableGradient(true)
+	obj:SetAnchorVisible(true)
 	obj:SetBarGrowth("DOWN")
 	obj:SetIconPosition("LEFT")
+	obj:SetTexture(texture)
 	obj:SetBaseColor(0.0, 1.0, 0.0)
 	obj:SetTextColor(1.0, 1.0, 1.0)
 	obj:SetTimerColor(1.0, 1.0, 1.0)
-		
+	obj:SetPoint("CENTER", UIParent, "CENTER")
+	
 	return obj	
 end
 
@@ -289,6 +363,65 @@ function GTB:GetGroups()
 end
 
 -----------------
+----- MISC ------
+-----------------
+
+function GTB.SetAnchorVisible(group, flag)
+	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetAnchorVisible"))
+	
+	group.anchorShown = flag
+	
+	if( flag ) then
+		group.frame:EnableMouse(true)
+		group.frame:SetAlpha(1.0)
+	else
+		group.frame:EnableMouse(false)
+		group.frame:SetAlpha(0)
+	end
+end
+
+function GTB.RegisterOnMove(group, handler, func)
+	argcheck(handler, 2, "table", "function", "string")
+	argcheck(func, 2, "string", "nil")
+	
+	if( func ) then
+		if( not handler[func] ) then
+			error(string.format(L["BAD_FUNC"], "RegisterOnMove"), 3)
+		end
+		
+		group.onMoveHandler = handler
+		group.onMoveFunc = func
+	else
+		if( type(handler) == "function" and not handler ) then
+			error(string.format(L["BAD_FUNC"], "RegisterOnMove"), 3)
+		end
+
+		group.onMoveFunc = handler
+	end
+end
+
+-- Associate a function to call when bars fade
+function GTB.RegisterOnFade(group, handler, func)
+	argcheck(handler, 2, "table", "function", "string")
+	argcheck(func, 2, "string", "nil")
+	
+	if( func ) then
+		if( not handler[func] ) then
+			error(string.format(L["BAD_FUNC"], "RegisterOnFade"), 3)
+		end
+		
+		group.onFadeHandler = handler
+		group.onFadeFunc = func
+	else
+		if( type(handler) == "function" and not handler ) then
+			error(string.format(L["BAD_FUNC"], "RegisterOnFade"), 3)
+		end
+
+		group.onFadeFunc = handler
+	end
+end
+
+-----------------
 -- BAR DISPLAY --
 -----------------
 
@@ -298,6 +431,14 @@ function GTB.EnableGradient(group, flag)
 	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "EnableGradient"))
 	
 	group.gradients = flag
+end
+
+-- Sets the max number of bars that can show up in this group
+function GTB.SetMaxBars(group, max)
+	argcheck(max, 2, "number")
+	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "EnableGradient"))
+	
+	group.maxBars = max
 end
 
 -- Group frame positioning, and all the timers inside it
@@ -334,7 +475,13 @@ function GTB.SetWidth(group, width)
 	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetWidth"))
 	
 	group.width = width
-	group.frame:SetWidth(width)
+	group.frame:SetWidth(width + group.height)
+
+	for _, bar in pairs(group.bars) do
+		bar.text:SetWidth((group.width - ((group.fontSize or size) * 3.6)) * 0.90)
+		bar.bg:SetWidth(group.width)
+		bar:SetWidth(group.width)
+	end
 end
 
 -- Bar texture
@@ -417,28 +564,20 @@ function GTB.SetFadeTime(group, seconds)
 	group.fadeTime = seconds
 end
 
---[[
--- Offset text from the left edge of the timer text
-function GTB.SetTextOffset(group, offset)
-	argcheck(offset, 2, "number")
-	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetTextOffset"))
-	
-	group.textOffset = offset
-end
-
--- Offset timer text from the left edge of the bar
-function GTB.SetTimerOffset(group, offset)
-	argcheck(offset, 2, "number")
-	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetTimerOffset"))
-	
-	group.timerOffset = offset
-end
-]]
-
 -- Redirect everything to the specified group
 function GTB.SetDisplayGroup(group, name)
 	argcheck(name, 2, "string", "nil")
 	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetDisplayGroup"))
+	
+	-- Don't allow setting the group to redirect to itself
+	if( name == "" or name == group.name ) then
+		name = nil
+	end
+	
+	-- Reset the bars if the display group changed
+	if( group.redirectTo ~= name ) then
+		group:UnregisterAllBars()
+	end
 	
 	group.redirectTo = name
 end
@@ -450,33 +589,22 @@ function GTB.GetDisplayGroup(group)
 	return group.redirectTo
 end
 
--- Associate a function to call when bars fade
-function GTB.RegisterOnFade(group, handler, func)
-	argcheck(handler, 2, "table", "function", "string")
-	argcheck(func, 2, "string", "nil")
-
-	if( func ) then
-		group.onFadeHandler = handler
-		group.onFadeFunc = func
-	else
-		group.onFadeFunc = handler
-	end	
-end
-
 --------------------
 -- BAR MANAGEMENT --
 --------------------
 
 -- Register
-function GTB.RegisterBar(group, id, seconds, text, icon, r, g, b)
+function GTB.RegisterBar(group, id, text, seconds, startSeconds, icon, r, g, b)
 	argcheck(id, 2, "string", "number")
-	argcheck(seconds, 3, "number")
-	argcheck(text, 4, "string")
+	argcheck(text, 3, "string")
+	argcheck(seconds, 4, "number")
 	argcheck(icon, 5, "string", "nil")
 	argcheck(r, 6, "number", "nil")
 	argcheck(g, 7, "number", "nil")
 	argcheck(b, 8, "number", "nil")
 	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "RegisterBar"))
+	
+	local originalOwner = group.name
 	
 	-- Check if we're supposed to redirect this to another group, and that the group exists
 	if( group.redirectTo and groups[group.redirectTo] ) then
@@ -525,15 +653,15 @@ function GTB.RegisterBar(group, id, seconds, text, icon, r, g, b)
 		frame.icon:SetTexture(icon)
 		
 		if( frame.icon:GetTexture() ) then
-			local mod = -1
-			if( group.iconPosition == "RIGHT" ) then
-				mod = 1
+			local offset = 0
+			if( group.iconPosition == "LEFT" ) then
+				offset = -group.height
 			end
 		
 			frame.icon:SetWidth(group.height)
 			frame.icon:SetHeight(group.height)
 			frame.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-			frame.icon:SetPoint("TOPLEFT", frame, "TOP" .. group.iconPosition, mod * group.height, 0)
+			frame.icon:SetPoint("TOPLEFT", frame, "TOP" .. group.iconPosition, offset, 0)
 			frame.icon:Show()
 		else
 			frame.icon:Hide()
@@ -547,23 +675,23 @@ function GTB.RegisterBar(group, id, seconds, text, icon, r, g, b)
 	frame.g = g or group.baseColor.g
 	frame.b = b or group.baseColor.b
 	frame.owner = group.name
+	frame.originalOwner = originalOwner
 	frame.lastUpdate = GetTime()
 	frame.endTime = GetTime() + seconds
 	frame.secondsLeft = seconds
-	frame.startSeconds = seconds
+	frame.startSeconds = startSeconds or seconds
 	frame.gradients = group.gradients
 	frame.groupName = group.name
+	frame.iconPath = icon
+	frame.barText = text
 	frame.barID = id
-	
-	-- Reposition this group
-	repositionFrames(group)
-	
+		
 	-- Setup background
 	frame.bg:SetStatusBarTexture(group.texture)
 	frame.bg:SetStatusBarColor(0.0, 0.5, 0.5, 0.5)
 	frame.bg:SetWidth(group.width)
 	frame.bg:SetHeight(group.height)
-
+	
 	-- Start it up
 	frame:SetStatusBarTexture(group.texture)
 	frame:SetStatusBarColor(frame.r, frame.g, frame.b)
@@ -571,8 +699,10 @@ function GTB.RegisterBar(group, id, seconds, text, icon, r, g, b)
 	frame:SetHeight(group.height)
 	frame:SetScale(group.scale)
 	frame:SetScript("OnUpdate", barOnUpdate)
-	frame:Show()
 	
+	-- Reposition this group
+	repositionFrames(group)
+
 	-- Register it
 	group.bars[id] = frame
 end
@@ -611,23 +741,26 @@ function GTB.UnregisterBar(group, id)
 		group = groups[group.redirectTo]
 	end
 
-	-- Remove the old entry
-	if( group.bars[id] ) then
-		-- Remove from list of used bars
-		for i=#(group.usedBars), 1, -1 do
-			if( group.usedBars[i].barID == id ) then
-				table.remove(group.usedBars, i)
-				break
-			end
-		end
-	
-		releaseFrame(group.bars[id])
-		repositionFrames(group)
-		group.bars[id] = nil
-		return true
+	-- Remove the old entry, if it exists
+	if( not group.bars[id] ) then
+		return nil
+
 	end
 	
-	return nil
+
+	-- Remove from list of used bars
+	for i=#(group.usedBars), 1, -1 do
+		if( group.usedBars[i].barID == id ) then
+			table.remove(group.usedBars, i)
+			break
+		end
+	end
+
+	releaseFrame(group.bars[id])
+	repositionFrames(group)
+	group.bars[id] = nil
+	
+	return true
 end
 
 -- Icon
@@ -645,33 +778,31 @@ function GTB.SetBarIcon(group, id, icon, left, right, top, bottom)
 		group = groups[group.redirectTo]
 	end
 
-	local frame = group.bars[id]
-	
-	-- No bar exists for this id, fail silently
-	if( not frame ) then
+	local bar = group.bars[id]
+	if( not bar ) then
 		return
 	end
 	
 	-- Display icon
 	if( icon ) then
-		frame.bar.icon:SetTexture(icon)
+		bar.bar.icon:SetTexture(icon)
 		
-		if( frame.bar.icon:GetTexture() ) then
+		if( bar.bar.icon:GetTexture() ) then
 			local mod = -1
 			if( group.iconPosition == "RIGHT" ) then
 				mod = 1
 			end
 		
-			frame.icon:SetWidth(group.height)
-			frame.icon:SetHeight(group.height)
-			frame.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-			frame.icon:SetPoint("TOPLEFT", frame, "TOP" .. group.iconPosition, mod * group.height, 0)
-			frame.icon:Show()
+			bar.icon:SetWidth(group.height)
+			bar.icon:SetHeight(group.height)
+			bar.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+			bar.icon:SetPoint("TOPLEFT", bar, "TOP" .. group.iconPosition, mod * group.height, 0)
+			bar.icon:Show()
 		else
-			frame.bar.icon:Hide()
+			bar.bar.icon:Hide()
 		end
 	else
-		frame.bar.icon:Hide()
+		bar.bar.icon:Hide()
 	end
 end
 
@@ -686,16 +817,9 @@ function GTB.SetRepeatingTimer(group, id, flag)
 		group = groups[group.redirectTo]
 	end
 
-	local frame = group.bars[id]
-	
-	-- No bar exists for this id, fail silently
-	if( not frame ) then
-		return
-	end
-	
-	-- Flag as repeating!
-	if( group.bars[id] ) then
-		group.bars[id].repeating = flag
+	local bar = group.bars[id]
+	if( bar ) then
+		bar.repeating = flag
 	end
 end
 
@@ -711,17 +835,15 @@ function GTB.RegisterOnClick(group, id, handler, func, ...)
 		group = groups[group.redirectTo]
 	end
 
-	local frame = group.bars[id]
-	
-	-- No bar exists for this id, fail silently
-	if( not frame ) then
+	local bar = group.bars[id]
+	if( not bar ) then
 		return
 	end
 	
-	frame:EnableMouse(true)
+	bar:EnableMouse(true)
 
 	-- Save for when we actually click
-	frame.clickHandler = handler
-	frame.clickFunc = func
-	frame.args = {...}
+	bar.clickHandler = handler
+	bar.clickFunc = func
+	bar.args = {...}
 end

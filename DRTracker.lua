@@ -8,7 +8,6 @@ local instanceType
 local expirationTime = {}
 local currentDRList = {}
 local spellMap = {}
-local runningSpells = {}
 
 local DR_RESET_SECONDS = 20
 
@@ -20,6 +19,7 @@ function DRTracker:OnInitialize()
 			redirectTo = "",
 			texture = "BantoBar",
 			showAnchor = false,
+			showName = true,
 			showSpells = true,
 			
 			disableSpells = {},
@@ -35,16 +35,20 @@ function DRTracker:OnInitialize()
 	self.icons = DRTrackerIcons
 	self.spellAbbrevs = DRTrackerAbbrevs
 
-	self:CreateAnchor()
-
 	SML = LibStub:GetLibrary("LibSharedMedia-3.0")
-	GTBLib = LibStub:GetLibrary("GTB-Beta1")
-	
+	SML.RegisterCallback(self, "LibSharedMedia_Registered", "TextureRegistered")
+
+	GTBLib = LibStub:GetLibrary("GTB-1.0")
 	GTBGroup = GTBLib:RegisterGroup("DRTracker", SML:Fetch(SML.MediaType.STATUSBAR, self.db.profile.texture))
+	GTBGroup:RegisterOnMove(self, "OnBarMove")
 	GTBGroup:SetScale(self.db.profile.scale)
 	GTBGroup:SetWidth(self.db.profile.width)
 	GTBGroup:SetDisplayGroup(self.db.profile.redirectTo ~= "" and self.db.profile.redirectTo or nil)
-	GTBGroup:SetPoint("TOPLEFT", self.anchor, "BOTTOMLEFT", 0, 0)
+	GTBGroup:SetAnchorVisible(self.db.profile.showAnchor)
+
+	if( self.db.profile.position ) then
+		GTBGroup:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", self.db.profile.position.x, self.db.profile.position.y)
+	end
 	
 	self.GTB = GTBLib
 	self.GTBGroup = GTBGroup
@@ -78,16 +82,27 @@ end
 -- Combat log data
 local COMBATLOG_OBJECT_REACTION_HOSTILE = COMBATLOG_OBJECT_REACTION_HOSTILE
 local COMBATLOG_OBJECT_AFFILIATION_MINE = COMBATLOG_OBJECT_AFFILIATION_MINE
-local eventRegistered = {["SPELL_CAST_SUCCESS"] = true, ["SPELL_AURA_APPLIED"] = true, ["SPELL_AURA_REMOVED"] = true, ["PARTY_KILL"] = true, ["UNIT_DIED"] = true}
+local eventRegistered = {["SPELL_CAST_SUCCESS"] = true, --[["SPELL_MISSED"] = true,]] ["SPELL_AURA_APPLIED"] = true, ["SPELL_AURA_REMOVED"] = true, ["PARTY_KILL"] = true, ["UNIT_DIED"] = true}
 function DRTracker:COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, eventType, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, ...)
 	if( not eventRegistered[eventType] ) then
 		return
 	end
+	
+	--if( eventType == "SPELL_MISSED" ) then
+	--	local id, name, school, type = ...
+	--	if( name == "Cyclone" and type == "IMMUNE" ) then
+	--		table.insert(TestLog, string.format("[%s] [%s] [%s] IMMUNE", GetTime(), name, destGUID))
+	--	end
+	--end
 		
 	-- Enemy gained a debuff
 	if( eventType == "SPELL_AURA_APPLIED" and bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE ) then
 		local spellID, spellName, spellSchool, auraType = ...
 		if( auraType == "DEBUFF" and self.spells[spellID] ) then
+			--if( spellName == "Cyclone" ) then
+			--	table.insert(TestLog, string.format("[%s] [%s] [%s] GAIN", GetTime(), spellName, destGUID))
+			--end
+
 			spellMap[spellName .. (select(2, GetSpellInfo(spellID)))] = spellID
 			self:AuraGained(spellID, spellName, destName, destGUID)
 		end
@@ -96,6 +111,9 @@ function DRTracker:COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, eventType, sour
 	elseif( eventType == "SPELL_AURA_REMOVED" and bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE ) then
 		local spellID, spellName, spellSchool, auraType = ...
 		if( auraType == "DEBUFF" and self.spells[spellID] ) then
+			--if( spellName == "Cyclone" ) then
+			--	table.insert(TestLog, string.format("[%s] [%s] [%s] FADE", GetTime(), spellName, destGUID))
+			--end
 			self:AuraFaded(spellID, spellName, destName, destGUID)
 		end
 		
@@ -111,18 +129,10 @@ function DRTracker:COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, eventType, sour
 end
 
 
-function DRTracker:TimerFound(spellName, spellRank, destName, destGUID, icon, timeLeft)
+function DRTracker:TimerFound(spellName, spellRank, destName, destGUID, icon, timeLeft, startSeconds)
 	local spellID = spellMap[spellName .. spellRank]
 	if( spellID and not self.db.profile.disableSpells[spellName] ) then
-		local id = spellID .. ":" .. destGUID
-		
-		-- This is a quick hack, need to add a startSeconds or a TimerExists API to GTB
-		if( runningSpells[id] ) then return end
-		runningSpells[id] = true
-		
-		GTBGroup:SetTexture(SML:Fetch(SML.MediaType.STATUSBAR, self.db.profile.texture))
-		GTBGroup:UnregisterBar(id)
-		GTBGroup:RegisterBar(id, timeLeft, string.format("%s - %s", self.spellAbbrevs[spellName] or spellName, destName), icon)
+		GTBGroup:RegisterBar(spellID .. ":" .. destGUID, string.format("%s - %s", self.spellAbbrevs[spellName] or spellName, self:StripServer(destName)), timeLeft, startSeconds, icon)
 	end
 end
 
@@ -136,17 +146,15 @@ function DRTracker:AuraGained(spellID, spellName, destName, destGUID)
 	if( expirationTime[id] and expirationTime[id] >= time ) then
 		diminished = self:GetNextDR(currentDRList[id])
 		currentDRList[id] = diminished
-		
+		expirationTime[id] = GetTime() + DR_RESET_SECONDS
+
 		if( not self.db.profile.disableSpells[spellName] ) then
-			local icon = self.icons[self.spells[spellID]] or (select(3, GetSpellInfo(spellID)))
-			GTBGroup:RegisterBar(id .. ":dr", DR_RESET_SECONDS, string.format("[%d%%] %s - %s", self:GetNextDR(diminished), L[self.spells[spellID]] or self.spells[spellID], destName), icon)
+			self:CreateDRTimer(id, destName, spellID)
 		end
 		
 	-- Nothing started yet or it's been over X seconds, so start us off at 100%
 	elseif( not expirationTime[id] or expirationTime[id] <= time ) then
 		currentDRList[id] = diminished
-		
-		-- Set it here in case a spell of the same DR category is used before this one fades
 		expirationTime[id] = GetTime() + DR_RESET_SECONDS
 	end
 end
@@ -154,12 +162,21 @@ end
 function DRTracker:AuraFaded(spellID, spellName, destName, destGUID)
 	local id = self.spells[spellID] .. ":" .. destGUID
 	if( currentDRList[id] and not self.db.profile.disableSpells[spellName] ) then
-		local icon = self.icons[self.spells[spellID]] or (select(3, GetSpellInfo(spellID)))
-		GTBGroup:RegisterBar(id .. ":dr", DR_RESET_SECONDS, string.format("[%d%%] %s - %s", self:GetNextDR(currentDRList[id]), L[self.spells[spellID]] or self.spells[spellID], destName), icon)
+		self:CreateDRTimer(id, destName, spellID)
 	end
 
-	runningSpells[spellID .. ":" .. destGUID] = nil
 	expirationTime[id] = GetTime() + DR_RESET_SECONDS
+end
+
+function DRTracker:CreateDRTimer(id, name, spellID)
+	local text
+	if( self.db.profile.showName ) then
+		text = string.format("[%d%%] %s", self:GetNextDR(currentDRList[id]), self:StripServer(name))
+	else
+		text = string.format("[%d%%] %s - %s", self:GetNextDR(currentDRList[id]), L[self.spells[spellID]] or self.spells[spellID], self:StripServer(name))
+	end
+
+	GTBGroup:RegisterBar(id .. ":dr", text, DR_RESET_SECONDS, nil, self.icons[self.spells[spellID]] or (select(3, GetSpellInfo(spellID))))
 end
 
 -- Timer scanning
@@ -190,7 +207,7 @@ function DRTracker:ScanUnit(unit)
 		if( not name ) then break end
 		
 		if( startSeconds and timeLeft ) then
-			self:TimerFound(name, rank, destName, destGUID, texture, timeLeft)
+			self:TimerFound(name, rank, destName, destGUID, texture, timeLeft, startSeconds)
 		end
 	end
 end
@@ -211,6 +228,15 @@ function DRTracker:ZONE_CHANGED_NEW_AREA()
 	instanceType = type
 end
 
+function DRTracker:StripServer(text)
+	local name, server = string.match(text, "(.-)%-(.*)$")
+	if( not name and not server ) then
+		return text
+	end
+	
+	return name
+end
+
 function DRTracker:Print(msg)
 	DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99DRTracker|r: " .. msg)
 end
@@ -223,76 +249,6 @@ function DRTracker:GetNextDR(dr)
 	end
 	
 	return 0
-end
-
-local function showTooltip(self)
-	GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT")
-	GameTooltip:SetText(L["ALT + Drag to move the frame anchor."], nil, nil, nil, nil, 1)
-end
-
-local function hideTooltip(self)
-	GameTooltip:Hide()
-end
-
-function DRTracker:CreateAnchor()
-	local backdrop = {bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-			edgeFile = "Interface\\ChatFrame\\ChatFrameBackground", edgeSize = 0.6,
-			insets = {left = 1, right = 1, top = 1, bottom = 1}}
-
-	-- Create our anchor for moving the frame
-	self.anchor = CreateFrame("Frame")
-	self.anchor:SetWidth(self.db.profile.width)
-	self.anchor:SetHeight(12)
-	self.anchor:SetBackdrop(backdrop)
-	self.anchor:SetBackdropColor(0, 0, 0, 1.0)
-	self.anchor:SetBackdropBorderColor(0.75, 0.75, 0.75, 1.0)
-	self.anchor:SetClampedToScreen(true)
-	self.anchor:SetScale(self.db.profile.scale)
-	self.anchor:EnableMouse(true)
-	self.anchor:SetMovable(true)
-	self.anchor:SetScript("OnEnter", showTooltip)
-	self.anchor:SetScript("OnLeave", hideTooltip)
-	self.anchor:SetScript("OnMouseDown", function(self)
-		if( DRTracker.db.profile.showAnchor and IsAltKeyDown() ) then
-			self.isMoving = true
-			self:StartMoving()
-		end
-	end)
-
-	self.anchor:SetScript("OnMouseUp", function(self)
-		if( self.isMoving ) then
-			self.isMoving = nil
-			self:StopMovingOrSizing()
-			
-			local scale = self:GetEffectiveScale()
-			local x = self:GetLeft() * scale
-			local y = self:GetTop() * scale
-		
-			if( not DRTracker.db.profile.position ) then
-				DRTracker.db.profile.position = {}
-			end
-			
-			DRTracker.db.profile.position.x = x
-			DRTracker.db.profile.position.y = y
-		end
-	end)	
-	
-	self.anchor.text = self.anchor:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-	self.anchor.text:SetText(L["DRTracker"])
-	self.anchor.text:SetPoint("CENTER", self.anchor, "CENTER")
-	
-	if( self.db.profile.position ) then
-		local scale = self.anchor:GetEffectiveScale()
-		self.anchor:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", self.db.profile.position.x / scale, self.db.profile.position.y / scale)
-	else
-		self.anchor:SetPoint("CENTER", UIParent, "CENTER")
-	end
-	
-	-- Hide anchor if locked
-	if( not self.db.profile.showAnchor ) then
-		self.anchor:SetAlpha(0)
-		self.anchor:EnableMouse(false)
-	end
 end
 
 function DRTracker:OnDisable()
@@ -314,18 +270,19 @@ function DRTracker:Reload()
 	GTBGroup:SetScale(self.db.profile.scale)
 	GTBGroup:SetWidth(self.db.profile.width)
 	GTBGroup:SetDisplayGroup(self.db.profile.redirectTo ~= "" and self.db.profile.redirectTo or nil)
-	
-	self.anchor:SetWidth(self.db.profile.width)
-	self.anchor:SetScale(self.db.profile.scale)
-	
-	if( not self.db.profile.showAnchor ) then
-		self.anchor:SetAlpha(0)
-		self.anchor:EnableMouse(false)
-	else
-		self.anchor:SetAlpha(1)
-		self.anchor:EnableMouse(true)
-	end
+	GTBGroup:SetAnchorVisible(self.db.profile.showAnchor)
 	
 	-- Reset map in case we disabled a spell
 	for k in pairs(spellMap) do spellMap[k] = nil end
+end
+
+function DRTracker:OnBarMove(parent, x, y)
+	DRTracker.db.profile.position.x = x
+	DRTracker.db.profile.position.y = y
+end
+
+function DRTracker:TextureRegistered(event, mediaType, key)
+	if( mediaType == SML.MediaType.STATUSBAR and DRTracker.db.profile.texture == key ) then
+		GTBGroup:SetTexture(SML:Fetch(SML.MediaType.STATUSBAR, self.db.profile.texture))
+	end
 end

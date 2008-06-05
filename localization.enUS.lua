@@ -37,6 +37,8 @@ DRTrackerLocals = {
 	["Show anchor"] = "Show anchor",
 	["Display timer anchors for moving around."] = "Display timer anchor for moving around.",
 	
+	["Only show trigger name in bars"] = "Only show trigger name in bars",
+	
 	["Display scale"] = "Display scale",
 	["How big the actual timers should be."] = "How big the actual timers should be.",
 	

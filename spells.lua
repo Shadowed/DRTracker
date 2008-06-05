@@ -16,6 +16,14 @@ DRTrackerSpells = {
 	[11286] = "disorient",
 	[38764] = "disorient",
 		
+	-- celesmorph
+	[118] = "disorient",
+	[12824] = "disorient",
+	[12825] = "disorient",
+	[28272] = "disorient",
+	[28271] = "disorient",
+	[12826] = "disorient",
+
 	--[[ FEARS ]]--
 	-- Fear (Warlock)
 	[5782] = "fear",
@@ -34,6 +42,11 @@ DRTrackerSpells = {
 	[8124] = "fear",
 	[10888] = "fear",
 	[10890] = "fear",
+	
+	-- Scare Beast
+	[1513] = "fear",
+	[14326] = "fear",
+	[14327] = "fear",
 	
 	-- Intimidating Shout
 	[5246] = "fear",
@@ -154,15 +167,6 @@ DRTrackerSpells = {
 	[2637] = "hibernate",
 	[18657] = "hibernate",
 	[18658] = "hibernate",
-	
-	-- Polymorph
-	[118] = "poly",
-	[12824] = "poly",
-	[12825] = "poly",
-	[28272] = "poly",
-	[28271] = "poly",
-	[12826] = "poly",
-		
 }
 
 DRTrackerIcons = {

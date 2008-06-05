@@ -141,8 +141,15 @@ local function loadOptions()
 				width = "full",
 				arg = "showSpells",
 			},
+			showName = {
+				order = 1,
+				type = "toggle",
+				name = L["Only show trigger name in bars"],
+				width = "full",
+				arg = "showName",
+			},
 			scale = {
-				order = 2,
+				order = 3,
 				type = "range",
 				name = L["Display scale"],
 				desc = L["How big the actual timers should be."],
@@ -151,7 +158,7 @@ local function loadOptions()
 				arg = "scale",
 			},
 			barWidth = {
-				order = 3,
+				order = 4,
 				type = "range",
 				name = L["Bar width"],
 				min = 0, max = 300, step = 1,
@@ -159,14 +166,15 @@ local function loadOptions()
 				arg = "width",
 			},
 			barName = {
-				order = 4,
+				order = 5,
 				type = "select",
 				name = L["Bar texture"],
 				values = "GetTextures",
+				dialogControl = 'LSM30_Statusbar',
 				arg = "texture",
 			},
 			location = {
-				order =5,
+				order = 6,
 				type = "select",
 				name = L["Redirect bars to group"],
 				desc = L["Group name to redirect bars to, this lets you show DRTracker timers under another addons bar group. Requires the bars to be created using GTB."],
@@ -174,7 +182,7 @@ local function loadOptions()
 				arg = "redirectTo",
 			},
 			enabledIn = {
-				order = 6,
+				order = 7,
 				type = "multiselect",
 				name = L["Enable DRTracker inside"],
 				desc = L["Allows you to set what scenario's DRTracker should be enabled inside."],
@@ -242,9 +250,9 @@ SlashCmdList["DRTRACKER"] = function(msg)
 		local GTBGroup = DRTracker.GTBGroup
 		GTBGroup:UnregisterAllBars()
 		GTBGroup:SetTexture(SML:Fetch(SML.MediaType.STATUSBAR, DRTracker.db.profile.texture))
-		GTBGroup:RegisterBar(1, 10, string.format("%s - %s", (select(1, GetSpellInfo(10890))), UnitName("player")), (select(3, GetSpellInfo(10890))))
-		GTBGroup:RegisterBar(2, 15, string.format("%s - %s", (select(1, GetSpellInfo(26989))), UnitName("player")), (select(3, GetSpellInfo(26989))))
-		GTBGroup:RegisterBar(3, 20, string.format("%s - %s", (select(1, GetSpellInfo(33786))), UnitName("player")), (select(3, GetSpellInfo(33786))))
+		GTBGroup:RegisterBar("dr1", string.format("%s - %s", (select(1, GetSpellInfo(10890))), UnitName("player")), 10, nil, (select(3, GetSpellInfo(10890))))
+		GTBGroup:RegisterBar("dr2", string.format("%s - %s", (select(1, GetSpellInfo(26989))), UnitName("player")), 15, nil, (select(3, GetSpellInfo(26989))))
+		GTBGroup:RegisterBar("dr3", string.format("%s - %s", (select(1, GetSpellInfo(33786))), UnitName("player")), 20, nil, (select(3, GetSpellInfo(33786))))
 	elseif( msg == "ui" ) then
 		if( not registered ) then
 			if( not options ) then
