@@ -260,7 +260,7 @@ SlashCmdList["DRTRACKER"] = function(msg)
 			end
 			
 			config:RegisterOptionsTable("DRTracker", options)
-			dialog:SetDefaultSize("DRTracker", 600, 500)
+			dialog:SetDefaultSize("DRTracker", 625, 500)
 			registered = true
 		end
 

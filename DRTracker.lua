@@ -2,8 +2,7 @@ DRTracker = LibStub("AceAddon-3.0"):NewAddon("DRTracker", "AceEvent-3.0")
 
 local L = DRTrackerLocals
 
-local SML
-local instanceType
+local SML, instanceType, GTBLib, GTBGroup
 
 local expirationTime = {}
 local currentDRList = {}

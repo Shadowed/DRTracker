@@ -16,7 +16,7 @@ DRTrackerSpells = {
 	[11286] = "disorient",
 	[38764] = "disorient",
 		
-	-- celesmorph
+	-- Polymorph
 	[118] = "disorient",
 	[12824] = "disorient",
 	[12825] = "disorient",
