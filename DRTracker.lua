@@ -276,11 +276,9 @@ function DRTracker:Reload()
 end
 
 function DRTracker:OnBarMove(parent, x, y)
-	if( not DRtracker.db.profile.position ) then
+	if( not DRTracker.db.profile.position ) then
 		DRTracker.db.profile.position = {}
-
 	end
-	
 
 	DRTracker.db.profile.position.x = x
 	DRTracker.db.profile.position.y = y
