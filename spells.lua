@@ -119,6 +119,17 @@ DRTrackerSpells = {
 	-- Cyclone
 	[33786] = "cyclone",
 	
+	--[[ ROOTS ]]--
+	-- Freeze (Water Elemental)
+	[33395] = "root",
+	
+	-- Frost Nova
+	[122] = "root",
+	[865] = "root",
+	[6131] = "root",
+	[10230] = "root",
+	[27088] = "root",
+	
 	--[[ MISC ]]--
 	-- Chastise (Maybe this shares DR with Imp HS?)
 	[44041] = "chastise",
@@ -174,6 +185,7 @@ DRTrackerIcons = {
 	["ctrlstun"] = "Interface\\Icons\\Spell_Frost_FrozenCore",
 	["fear"] = "Interface\\Icons\\Spell_Shadow_Possession",
 	["disorient"] = "Interface\\Icons\\Ability_Gouge",
+	["root"] = "Interface\\Icons\\Spell_Frost_FrostNova",
 }
 
 local L = DRTrackerLocals
