@@ -1,21 +1,5 @@
 DRTrackerLocals = {
 	["ALT + Drag to move the frame anchor."] = "ALT + Drag to move the frame anchor.",
-	
-	-- DR types
-	["disorient"] = "Disorients",
-	["fear"] = "Fears",
-	["ctrlstun"] = "Control Stuns",
-	["rndstun"] = "Rand Stuns",
-	["cyclone"] = "Physical CC",
-	["ks"] = "Kidney Shot",
-	["imphs"] = "Imp Ham",
-	["chastise"] = "Chastise",
-	["scatters"] = "Scatter S",
-	["freezetrap"] = "Freeze T",
-	["dc"] = "Death Coil",
-	["entroots"] = "Ent Roots",
-	["hibernate"] = "Hibernate",
-	["poly"] = "Polymorph",
 
 	-- Spell abbreviations
 	["Ent Roots"] = "Ent Roots",
@@ -42,9 +26,6 @@ DRTrackerLocals = {
 	["Display scale"] = "Display scale",
 	["How big the actual timers should be."] = "How big the actual timers should be.",
 	
-	["Show spell timers"] = "Show spell timers",
-	["Enables showing the time left on spells, if you disable this then DR will still be tracked and displayed."] = "Enables showing the time left on spells, if you disable this then DR will still be tracked and displayed.",
-	
 	["Bar width"] = "Bar width",
 	["Bar texture"] = "Bar texture",
 
@@ -54,11 +35,16 @@ DRTrackerLocals = {
 	["Enable DRTracker inside"] = "Enable DRTracker inside",
 	["Allows you to set what scenario's DRTracker should be enabled inside."] = "Allows you to set what scenario's DRTracker should be enabled inside.",
 	
-	["Spells"] = "Spells",
+	["Show DR categories"] = "Show DR categories",
 	["List"] = "List",
-	["Lets you choose which spells should not be tracked in both time left, and diminishing returns."] = "Lets you choose which spells should not be tracked in both time left, and diminishing returns.",
+	["Lets you choose which diminishing return categories should be disabled."] = "Lets you choose which diminishing return categories should be disabled.",
+	["Disable category %s"] = "Disable category %s",
 	
-	["Disable timers for %s"] = "Disable timers for %s",
+	["Show enemies"] = "Show enemies",
+	["Show friendlies"] = "Show friendlies",
+	
+	["Show diminishing returns for"] = "Show diminishing returns for",
+	["Allows you to set if diminishing returns should be shown for friendly players and/or enemy players."] = "Allows you to set if diminishing returns should be shown for friendly players and/or enemy players.",
 	
 	["Everywhere else"] = "Everywhere else",
 	["Battlegrounds"] = "Battlegrounds",

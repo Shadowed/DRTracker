@@ -1,4 +1,12 @@
-DRTrackerSpells = { 
+local major = "DRData-1.0"
+local minor = tonumber(string.match("$Revision: 703$", "(%d+)") or 1)
+
+assert(LibStub, string.format("%s requires LibStub.", major))
+
+local Data = LibStub:NewLibrary(major, minor)
+if( not Data ) then return end
+
+Data.Spells = {
 	--[[ DISORIENTS ]]--
 	-- Maim
 	[22570] = "disorient",
@@ -130,6 +138,15 @@ DRTrackerSpells = {
 	[10230] = "root",
 	[27088] = "root",
 	
+	-- Entangling Roots
+	[339] = "root",
+	[1062] = "root",
+	[5195] = "root",
+	[5196] = "root",
+	[9852] = "root",
+	[9853] = "root",
+	[26989] = "root",
+
 	--[[ MISC ]]--
 	-- Chastise (Maybe this shares DR with Imp HS?)
 	[44041] = "chastise",
@@ -164,15 +181,6 @@ DRTrackerSpells = {
 
 	-- Improved Hamstring
 	[23694] = "imphs",
-
-	-- Entangling Roots
-	[339] = "entroots",
-	[1062] = "entroots",
-	[5195] = "entroots",
-	[5196] = "entroots",
-	[9852] = "entroots",
-	[9853] = "entroots",
-	[26989] = "entroots",
 		
 	-- Hibernate
 	[2637] = "hibernate",
@@ -180,17 +188,20 @@ DRTrackerSpells = {
 	[18658] = "hibernate",
 }
 
-DRTrackerIcons = {
-	["rndstun"] = "Interface\\Icons\\INV_Mace_02",
-	["ctrlstun"] = "Interface\\Icons\\Spell_Frost_FrozenCore",
-	["fear"] = "Interface\\Icons\\Spell_Shadow_Possession",
-	["disorient"] = "Interface\\Icons\\Ability_Gouge",
-	["root"] = "Interface\\Icons\\Spell_Frost_FrostNova",
-}
-
-local L = DRTrackerLocals
-DRTrackerAbbrevs = {
-	[(GetSpellInfo(339))] = L["Ent Roots"],
-	[(GetSpellInfo(853))] = L["Hammer of Just"],
-	[(GetSpellInfo(8122))] = L["Psy Scream"],
+-- DR Category names
+Data.TypeNames = {
+	["disorient"] = "Disorients",
+	["fear"] = "Fears",
+	["ctrlstun"] = "Control Stuns",
+	["rndstun"] = "Random Stuns",
+	["cyclone"] = "Cyclone/Blind",
+	["ks"] = "Kidney Shot",
+	["imphs"] = "Imp Hamstring",
+	["chastise"] = "Chastise",
+	["scatters"] = "Scatter Shot",
+	["freezetrap"] = "Freeze Trap",
+	["dc"] = "Death Coil",
+	["entroots"] = "Entangling Roots",
+	["hibernate"] = "Hibernate",
+	["poly"] = "Polymorph",
 }

@@ -1,0 +1,9 @@
+## Interface: 20400
+## Title: Lib: Diminishing Returns-1.0
+## Notes: Keeps track of diminishing returns on players.
+## Author: Mayen
+
+LibStub-1.0\LibStub-1.0.xml
+CallbackHandler-1.0\CallbackHandler-1.0.xml
+
+DiminishingReturns-1.0.xml

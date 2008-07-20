@@ -133,14 +133,6 @@ local function loadOptions()
 				width = "full",
 				arg = "showAnchor",
 			},
-			showTimers = {
-				order = 1,
-				type = "toggle",
-				name = L["Show spell timers"],
-				desc = L["Enables showing the time left on spells, if you disable this then DR will still be tracked and displayed."],
-				width = "full",
-				arg = "showSpells",
-			},
 			showName = {
 				order = 1,
 				type = "toggle",
@@ -192,13 +184,24 @@ local function loadOptions()
 				width = "full",
 				arg = "inside"
 			},
+			showType = {
+				order = 7,
+				type = "multiselect",
+				name = L["Show diminishing returns for"],
+				desc = L["Allows you to set if diminishing returns should be shown for friendly players and/or enemy players."],
+				values = {["enemy"] = L["Show enemies"], ["friendly"] = L["Show friendlies"]},
+				set = setMulti,
+				get = getMulti,
+				width = "full",
+				arg = "showType"
+			},
 		},
 	}
 	
-	options.args.spells = {
+	options.args.cats = {
 		type = "group",
 		order = 3,
-		name = L["Spells"],
+		name = L["Show DR categories"],
 		get = get,
 		set = set,
 		handler = Config,
@@ -206,7 +209,7 @@ local function loadOptions()
 			desc = {
 				order = 0,
 				type = "description",
-				name = L["Lets you choose which spells should not be tracked in both time left, and diminishing returns."],
+				name = L["Lets you choose which diminishing return categories should be disabled."],
 			},
 			list = {
 				order = 1,
@@ -219,20 +222,15 @@ local function loadOptions()
 	}
 
 	-- Load spell list
-	local alreadyAdded = {}
-	for spellID in pairs(DRTracker.spells) do
-		local spellName = GetSpellInfo(spellID)
-		if( not alreadyAdded[spellName] ) then
-			alreadyAdded[spellName] = true
-			
-			options.args.spells.args.list.args[tostring(spellID)] = {
-				order = 1,
-				type = "toggle",
-				name = spellName,
-				desc = string.format(L["Disable timers for %s"], spellName),
-				arg = "disableSpells." .. spellName,
-			}
-		end
+	local DRData = LibStub("DRData-1.0")
+	for cat, name in pairs(DRData.TypeNames) do
+		options.args.cats.args.list.args[cat] = {
+			order = 1,
+			type = "toggle",
+			name = name,
+			desc = string.format(L["Disable category %s"], name),
+			arg = "disableCategories." .. cat,
+		}
 	end
 
 	-- DB Profiles

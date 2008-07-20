@@ -4,7 +4,7 @@
 ## Author: Mayen
 ## Version: $Revision: 666 $
 ## SavedVariables: DRTrackerDB
-## OptionalDeps: LibStub, GTB, Ace3, LibSharedMedia-3.0
+## OptionalDeps: LibStub, GTB, Ace3, DiminishingReturns-1.0, LibSharedMedia-3.0
 
 libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
@@ -17,11 +17,11 @@ libs\AceConfig-3.0\AceConfig-3.0.xml
 libs\AceGUI-3.0-SharedMediaWidgets\widget.xml
 libs\LibSharedMedia-3.0\lib.xml
 libs\GTB\GTB.xml
+libs\DiminishingReturns-1.0\DiminishingReturns-1.0.xml
 
 localization.enUS.lua
 localization.deDE.lua
 localization.frFR.lua
 
-spells.lua
 DRTracker.lua
 config.lua
