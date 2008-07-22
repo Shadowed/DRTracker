@@ -15,6 +15,7 @@ function DRTracker:OnInitialize()
 			texture = "BantoBar",
 			showAnchor = false,
 			showName = true,
+			growUp = false,
 			
 			disableCategories = {},
 			
@@ -53,6 +54,7 @@ function DRTracker:OnInitialize()
 	GTBGroup:SetWidth(self.db.profile.width)
 	GTBGroup:SetDisplayGroup(self.db.profile.redirectTo ~= "" and self.db.profile.redirectTo or nil)
 	GTBGroup:SetAnchorVisible(self.db.profile.showAnchor)
+	GTBGroup:SetBarGrowth(self.db.profile.growUp and "UP" or "DOWN")
 
 	if( self.db.profile.position ) then
 		GTBGroup:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", self.db.profile.position.x, self.db.profile.position.y)
@@ -161,6 +163,7 @@ function DRTracker:Reload()
 	GTBGroup:SetWidth(self.db.profile.width)
 	GTBGroup:SetDisplayGroup(self.db.profile.redirectTo ~= "" and self.db.profile.redirectTo or nil)
 	GTBGroup:SetAnchorVisible(self.db.profile.showAnchor)
+	GTBGroup:SetBarGrowth(self.db.profile.growUp and "UP" or "DOWN")
 end
 
 function DRTracker:OnBarMove(parent, x, y)

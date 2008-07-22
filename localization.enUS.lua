@@ -46,6 +46,9 @@ DRTrackerLocals = {
 	["Show diminishing returns for"] = "Show diminishing returns for",
 	["Allows you to set if diminishing returns should be shown for friendly players and/or enemy players."] = "Allows you to set if diminishing returns should be shown for friendly players and/or enemy players.",
 	
+	["Instead of adding everything from top to bottom, timers will be shown from bottom to top."] = "Instead of adding everything from top to bottom, timers will be shown from bottom to top.",
+	["Grow display up"] = "Grow display up",
+	
 	["Everywhere else"] = "Everywhere else",
 	["Battlegrounds"] = "Battlegrounds",
 	["Arenas"] = "Arenas",

@@ -140,6 +140,14 @@ local function loadOptions()
 				width = "full",
 				arg = "showName",
 			},
+			growUp = {
+				order = 1,
+				type = "toggle",
+				name = L["Grow display up"],
+				desc = L["Instead of adding everything from top to bottom, timers will be shown from bottom to top."],
+				width = "full",
+				arg = "growUp"
+			},
 			scale = {
 				order = 3,
 				type = "range",
