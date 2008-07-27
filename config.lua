@@ -108,6 +108,72 @@ function Config:GetGroups()
 	return groups
 end
 
+
+-- DR filters
+local spells = {}
+local alreadyAdded = {}
+local function sortSpells(a, b)
+	return a < b
+end
+
+local function getTooltip(DRData, cat, name)
+	for i=#(spells), 1, -1 do table.remove(spells, i) end
+	for k in pairs(alreadyAdded) do alreadyAdded[k] = nil end
+	
+	for spellID, drCat in pairs(DRData.Spells) do
+		if( drCat == cat ) then
+			local name = GetSpellInfo(spellID)
+			if( not alreadyAdded[name] ) then
+				alreadyAdded[name] = true
+				table.insert(spells, name)
+			end
+		end
+	end
+	
+	table.sort(spells, sortSpells)
+	
+	return string.format(L["Disable category %s.\n\nSpells in this category:\n%s"], name, table.concat(spells, "\n"))
+end
+
+local function createDRFilters(text, configKey)
+	local config = {
+		type = "group",
+		order = 3,
+		name = text,
+		get = get,
+		set = set,
+		handler = Config,
+		args = {
+			desc = {
+				order = 0,
+				type = "description",
+				name = L["Lets you choose which diminishing return categories should be disabled."],
+			},
+			list = {
+				order = 1,
+				type = "group",
+				inline = true,
+				name = L["List"],
+				args = {},
+			},
+		},
+	}
+
+	-- Load spell list
+	local DRData = LibStub("DRData-1.0")
+	for cat, name in pairs(DRData.TypeNames) do
+		config.args.list.args[cat] = {
+			order = 1,
+			type = "toggle",
+			name = name,
+			desc = getTooltip(DRData, cat, name),
+			arg = string.format("disabled.%s.%s", configKey, cat),
+		}
+	end
+	
+	return config
+end
+
 -- General options
 local enabledIn = {["none"] = L["Everywhere else"], ["pvp"] = L["Battlegrounds"], ["arena"] = L["Arenas"], ["raid"] = L["Raid instances"], ["party"] = L["Party instances"]}
 
@@ -196,8 +262,8 @@ local function loadOptions()
 				order = 7,
 				type = "multiselect",
 				name = L["Show diminishing returns for"],
-				desc = L["Allows you to set if diminishing returns should be shown for friendly players and/or enemy players."],
-				values = {["enemy"] = L["Show enemies"], ["friendly"] = L["Show friendlies"]},
+				desc = L["Allows you to set if diminishing returns should be shown for friendly players and/or enemy players. Use show self if you only want your DRs but not all friendly players."],
+				values = {["enemy"] = L["Show enemies"], ["friendly"] = L["Show friendlies"], ["self"] = L["Show self"]},
 				set = setMulti,
 				get = getMulti,
 				width = "full",
@@ -206,40 +272,8 @@ local function loadOptions()
 		},
 	}
 	
-	options.args.cats = {
-		type = "group",
-		order = 3,
-		name = L["Show DR categories"],
-		get = get,
-		set = set,
-		handler = Config,
-		args = {
-			desc = {
-				order = 0,
-				type = "description",
-				name = L["Lets you choose which diminishing return categories should be disabled."],
-			},
-			list = {
-				order = 1,
-				type = "group",
-				inline = true,
-				name = L["List"],
-				args = {},
-			},
-		},
-	}
-
-	-- Load spell list
-	local DRData = LibStub("DRData-1.0")
-	for cat, name in pairs(DRData.TypeNames) do
-		options.args.cats.args.list.args[cat] = {
-			order = 1,
-			type = "toggle",
-			name = name,
-			desc = string.format(L["Disable category %s"], name),
-			arg = "disableCategories." .. cat,
-		}
-	end
+	options.args.enemy = createDRFilters(L["Enemy DR filter"], "EnemyDRChanged")
+	options.args.friendly = createDRFilters(L["Friendly DR filter"], "FriendlyDRChanged")
 
 	-- DB Profiles
 	options.args.profile = LibStub("AceDBOptions-3.0"):GetOptionsTable(DRTracker.db)

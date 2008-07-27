@@ -58,7 +58,7 @@ Data.Spells = {
 	
 	-- Intimidating Shout
 	[5246] = "fear",
-		
+			
 	--[[ CONTROL STUNS ]]--
 	-- Hammer of Justice
 	[853] = "ctrlstun",
@@ -100,7 +100,7 @@ Data.Spells = {
 	[30283] = "ctrlstun", 
 	[30413] = "ctrlstun",
 	[30414] = "ctrlstun",
-
+	
 	--[[ RANDOM STUNS ]]--
 	-- Starfire Stun
 	[16922] = "rndstun",
@@ -201,7 +201,7 @@ Data.TypeNames = {
 	["scatters"] = "Scatter Shot",
 	["freezetrap"] = "Freeze Trap",
 	["dc"] = "Death Coil",
-	["entroots"] = "Entangling Roots",
 	["hibernate"] = "Hibernate",
-	["poly"] = "Polymorph",
+	["root"] = "Roots",
+	["impconc"] = "Imp Concussive Shot",
 }

@@ -5,33 +5,44 @@ local AceGUI = LibStub("AceGUI-3.0")
 local Media = LibStub("LibSharedMedia-3.0")
 
 do
-	local lists = {}
-	lists.font = {}
-	lists.sound = {}
-	lists.statusbar = {}
-	lists.border = {}
-	lists.background = {}
-		
+	local function readOnly (t)
+		local proxy = {}
+		local mt = {       -- create metatable
+			__index = t,
+			__newindex = function (t,k,v)
+				error("attempt to update a read-only table", 2)
+			end
+		}
+		setmetatable(proxy, mt)
+		return proxy
+    end
+	local lists = readOnly{}
+	rawset(lists, 'font', readOnly{})
+	rawset(lists, 'sound', readOnly{})
+	rawset(lists, 'statusbar', readOnly{})
+	rawset(lists, 'border', readOnly{})
+	rawset(lists, 'background', readOnly{})
+	
 	Media:RegisterCallback("LibSharedMedia_Registered", function(event, mediatype, key)
 			if lists[mediatype] then
-				lists[mediatype][key] = key
+				rawset(lists[mediatype], key, key)
 			end
 		end)
 		
 	for k, v in pairs(Media:List("font")) do
-		lists.font[v] = v
+		rawset(lists.font, v, v)
 	end
 	for k, v in pairs(Media:List("sound")) do
-		lists.sound[v] = v
+		rawset(lists.sound, v, v)
 	end
 	for k, v in pairs(Media:List("statusbar")) do
-		lists.statusbar[v] = v
+		rawset(lists.statusbar, v, v)
 	end
 	for k, v in pairs(Media:List("border")) do
-		lists.border[v] = v
+		rawset(lists.border, v, v)
 	end
 	for k, v in pairs(Media:List("background")) do
-		lists.background[v] = v
+		rawset(lists.background, v, v)
 	end
 
 
@@ -779,5 +790,5 @@ do
 		AceGUI:RegisterWidgetType(widgetType, Constructor, widgetVersion)
 	end
 
-	--DEFAULT_CHAT_FRAME:AddMessage('LSM30_widgets')--lets make sure this loads properly :P
+	AceGUIWidgetLSMlists = lists
 end

@@ -35,16 +35,18 @@ DRTrackerLocals = {
 	["Enable DRTracker inside"] = "Enable DRTracker inside",
 	["Allows you to set what scenario's DRTracker should be enabled inside."] = "Allows you to set what scenario's DRTracker should be enabled inside.",
 	
-	["Show DR categories"] = "Show DR categories",
+	["Enemy DR filter"] = "Enemy DR filter",
+	["Friendly DR filter"] = "Friendly DR filter",
 	["List"] = "List",
 	["Lets you choose which diminishing return categories should be disabled."] = "Lets you choose which diminishing return categories should be disabled.",
-	["Disable category %s"] = "Disable category %s",
+	["Disable category %s.\n\nSpells in this category:\n%s"] = "Disable category %s.\n\nSpells in this category:\n%s",
 	
 	["Show enemies"] = "Show enemies",
 	["Show friendlies"] = "Show friendlies",
+	["Show self"] = "Show self",
 	
 	["Show diminishing returns for"] = "Show diminishing returns for",
-	["Allows you to set if diminishing returns should be shown for friendly players and/or enemy players."] = "Allows you to set if diminishing returns should be shown for friendly players and/or enemy players.",
+	["Allows you to set if diminishing returns should be shown for friendly players and/or enemy players. Use show self if you only want your DRs but not all friendly players."] = "Allows you to set if diminishing returns should be shown for friendly players and/or enemy players. Use show self if you only want your DRs but not all friendly players.",
 	
 	["Instead of adding everything from top to bottom, timers will be shown from bottom to top."] = "Instead of adding everything from top to bottom, timers will be shown from bottom to top.",
 	["Grow display up"] = "Grow display up",

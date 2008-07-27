@@ -2,7 +2,7 @@ DRTracker = LibStub("AceAddon-3.0"):NewAddon("DRTracker", "AceEvent-3.0")
 
 local L = DRTrackerLocals
 
-local SML, instanceType, DRLib, GTBLib, GTBGroup
+local SML, instanceType, DRLib, GTBLib, GTBGroup, playerGUID
 
 local barID = {}
 
@@ -17,7 +17,7 @@ function DRTracker:OnInitialize()
 			showName = true,
 			growUp = false,
 			
-			disableCategories = {},
+			disabled = {EnemyDRChanged = {}, FriendlyDRChanged = {}},
 			
 			showType = {enemy = true, friendly = false},
 			inside = {["pvp"] = true, ["arena"] = true},
@@ -41,6 +41,16 @@ function DRTracker:OnInitialize()
 		self.db.proifle.showSpells = nil
 		self.db.profile.disableSpells = nil
 	end
+	
+	-- Switch format around
+	if( self.db.profile.disableCategories ) then
+		local data = {}
+		data.EnemyDRChanged = CopyTable(self.db.profile.disableCategories)
+		data.FriendlyDRChanged = CopyTable(self.db.profile.disableCategories)
+		
+		self.db.profile.disableCategories = nil
+		self.db.profile.disabled = data
+	end
 
 	-- Media
 	SML = LibStub:GetLibrary("LibSharedMedia-3.0")
@@ -62,6 +72,9 @@ function DRTracker:OnInitialize()
 	
 	self.GTB = GTBLib
 	self.GTBGroup = GTBGroup
+	
+	-- GUID!
+	playerGUID = UnitGUID("player")
 	
 	-- DR Tracking lib
 	DRLib = LibStub("DiminishingReturns-1.0")
@@ -85,7 +98,7 @@ function DRTracker:OnEnable()
 		DRLib.RegisterCallback(self, "EnemyDRChanged", "DRChanged")
 	end
 	
-	if( self.db.profile.showType.friendly ) then
+	if( self.db.profile.showType.friendly or self.db.profile.showType.self ) then
 		DRLib.RegisterCallback(self, "FriendlyDRChanged", "DRChanged")
 	end
 	
@@ -99,7 +112,12 @@ end
 
 function DRTracker:DRChanged(event, spellID, resetIn, drCategory, diminished, name, guid)
 	-- Don't show this category of DR
-	if( self.db.profile.disableCategories[drCategory] ) then
+	if( self.db.profile.disabled[event][drCategory] ) then
+		return
+	end
+	
+	-- Hide DRs if it's a friendly DR, we don't have friendly on and only self, oh and it's not the player
+	if( event == "FriendlyDRChanged" and self.db.profile.showType.self and not self.db.profile.showType.friendly and guid ~= playerGUID ) then
 		return
 	end
 	
