@@ -77,7 +77,7 @@ function DRTracker:OnInitialize()
 	playerGUID = UnitGUID("player")
 	
 	-- DR Tracking lib
-	DRLib = LibStub("DiminishingReturns-1.0")
+	DRData = LibStub("DRData-1.0")
 	
 	-- Monitor for zone change
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
@@ -94,25 +94,21 @@ function DRTracker:OnEnable()
 		return
 	end
 	
-	if( self.db.profile.showType.enemy ) then
-		DRLib.RegisterCallback(self, "EnemyDRChanged", "DRChanged")
-	end
-	
-	if( self.db.profile.showType.friendly or self.db.profile.showType.self ) then
-		DRLib.RegisterCallback(self, "FriendlyDRChanged", "DRChanged")
-	end
-	
-	DRLib.RegisterCallback(self, "PlayerDied", "PlayerDied")
+	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 end
 
 function DRTracker:OnDisable()
-	DRLib.UnregisterAllCallbacks(self)
 	GTBGroup:UnregisterAllBars()
 end
 
 function DRTracker:DRChanged(event, spellID, resetIn, drCategory, diminished, name, guid)
 	-- Don't show this category of DR
 	if( self.db.profile.disabled[event][drCategory] ) then
+		return
+	end
+	
+	-- Not tracking enemy, or friendly
+	if( ( not self.db.profile.showType.enemy and event == "EnemyDRChanged" ) or ( not self.db.profile.showType.friendly and not self.db.profile.showType.self and event == "FriendlyDRChanged" ) ) then
 		return
 	end
 	
@@ -129,14 +125,14 @@ function DRTracker:DRChanged(event, spellID, resetIn, drCategory, diminished, na
 	if( self.db.profile.showName ) then
 		text = string.format("[%d%%] %s", diminished * 100, self:StripServer(name))
 	else
-		text = string.format("[%d%%] %s - %s", diminished * 100, DRLib:GetCategoryName(drCategory) or drCategory, self:StripServer(name))
+		text = string.format("[%d%%] %s - %s", diminished * 100, DRData:GetCategoryName(drCategory) or drCategory, self:StripServer(name))
 	end
 
 	GTBGroup:RegisterBar(id, text, resetIn, nil, self.icons[drCategory] or spellIcon)
 end
 
 -- Player died, remove all of their DRs
-function DRTracker:PlayerDied(event, destGUID)
+function DRTracker:PlayerDied(destGUID)
 	for id, guid in pairs(barID) do
 		if( guid == destGUID ) then
 			GTBGroup:UnregisterBar(id)
@@ -196,5 +192,84 @@ end
 function DRTracker:TextureRegistered(event, mediaType, key)
 	if( mediaType == SML.MediaType.STATUSBAR and DRTracker.db.profile.texture == key ) then
 		GTBGroup:SetTexture(SML:Fetch(SML.MediaType.STATUSBAR, self.db.profile.texture))
+	end
+end
+
+
+-- DR TRACKING
+local trackedPlayers = {}
+local function debuffGained(spellID, destName, destGUID, isEnemy)
+	if( not destName ) then return end
+	
+	if( not trackedPlayers[destGUID] ) then
+		trackedPlayers[destGUID] = {}
+	end
+
+	-- See if we should reset it back to undiminished
+	local drCat = DRData:GetSpellCategory(spellID)
+	local tracked = trackedPlayers[destGUID][drCat]
+	if( tracked and tracked.reset <= GetTime() ) then
+		tracked.diminished = 1.0
+	end
+end
+
+local function debuffFaded(spellID, destName, destGUID, isEnemy)
+	if( not destName ) then return end
+	
+	local drCat = DRData:GetSpellCategory(spellID)
+	if( not trackedPlayers[destGUID] ) then
+		trackedPlayers[destGUID] = {}
+	end
+
+	if( not trackedPlayers[destGUID][drCat] ) then
+		trackedPlayers[destGUID][drCat] = { reset = 0, diminished = 1.0 }
+	end
+	
+	local time = GetTime()
+	local tracked = trackedPlayers[destGUID][drCat]
+	
+	tracked.reset = time + DRData:GetResetTime()
+	tracked.diminished = DRData:NextDR(tracked.diminished)
+	
+	DRTracker:DRChanged((isEnemy and "EnemyDRChanged" or "FriendlyDRChanged"), spellID, DRData:GetResetTime(), drCat, tracked.diminished, destName, destGUID)
+end
+
+local function resetDR(destGUID)
+	-- Reset the tracked DRs for this person
+	if( trackedPlayers[destGUID] ) then
+		for cat in pairs(trackedPlayers[destGUID]) do
+			trackedPlayers[destGUID][cat].reset = 0
+			trackedPlayers[destGUID][cat].diminished = 1.0
+		end
+	end
+	
+	DRTracker:PlayerDied(destGUID)
+end
+
+local COMBATLOG_OBJECT_TYPE_PLAYER = COMBATLOG_OBJECT_TYPE_PLAYER
+local COMBATLOG_OBJECT_REACTION_HOSTILE = COMBATLOG_OBJECT_REACTION_HOSTILE
+local COMBATLOG_OBJECT_CONTROL_PLAYER = COMBATLOG_OBJECT_CONTROL_PLAYER
+
+local eventRegistered = {["SPELL_AURA_APPLIED"] = true, ["SPELL_AURA_REMOVED"] = true, ["PARTY_KILL"] = true, ["UNIT_DIED"] = true}
+function DRTracker:COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, eventType, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, spellID, spellName, spellSchool, auraType)
+	if( not eventRegistered[eventType] or ( bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) ~= COMBATLOG_OBJECT_TYPE_PLAYER and bit.band(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) ~= COMBATLOG_OBJECT_CONTROL_PLAYER ) ) then
+		return
+	end
+	
+	-- Enemy gained a debuff
+	if( eventType == "SPELL_AURA_APPLIED" ) then
+		if( auraType == "DEBUFF" and DRData:GetSpellCategory(spellID) ) then
+			debuffGained(spellID, destName, destGUID, (bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE))
+		end
+	
+	-- Buff or debuff faded from an enemy
+	elseif( eventType == "SPELL_AURA_REMOVED" ) then
+		if( auraType == "DEBUFF" and DRData:GetSpellCategory(spellID) ) then
+			debuffFaded(spellID, destName, destGUID, (bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE))
+		end
+		
+	-- Don't use UNIT_DIED inside arenas due to accuracy issues, outside of arenas we don't care too much
+	elseif( ( eventType == "UNIT_DIED" and select(2, IsInInstance()) ~= "arena" ) or eventType == "PARTY_KILL" ) then
+		resetDR(destGUID)
 	end
 end

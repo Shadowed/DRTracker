@@ -120,7 +120,7 @@ local function getTooltip(DRData, cat, name)
 	for i=#(spells), 1, -1 do table.remove(spells, i) end
 	for k in pairs(alreadyAdded) do alreadyAdded[k] = nil end
 	
-	for spellID, drCat in pairs(DRData.Spells) do
+	for spellID, drCat in pairs(DRData:GetSpells()) do
 		if( drCat == cat ) then
 			local name = GetSpellInfo(spellID)
 			if( not alreadyAdded[name] ) then
@@ -161,7 +161,8 @@ local function createDRFilters(text, configKey)
 
 	-- Load spell list
 	local DRData = LibStub("DRData-1.0")
-	for cat, name in pairs(DRData.TypeNames) do
+	for cat in pairs(DRData:GetCategories()) do
+		local name = DRData:GetCategoryName(cat)
 		config.args.list.args[cat] = {
 			order = 1,
 			type = "toggle",
