@@ -1,5 +1,5 @@
 local major = "GTB-1.0"
-local minor = tonumber(string.match("$Revision: 752 $", "(%d+)") or 1)
+local minor = tonumber(string.match("$Revision: 843 $", "(%d+)") or 1)
 
 assert(LibStub, string.format("%s requires LibStub.", major))
 
@@ -41,8 +41,8 @@ GTB.groups = GTB.groups or {}
 
 local framePool = GTB.framePool
 local groups = GTB.groups
-local methods = {"RegisterOnMove", "SetAnchorVisible", "SetMaxBars", "SetBaseColor", "EnableGradient", "SetPoint", "SetScale", "SetWidth", "SetTexture", "SetBarGrowth", "SetIconPosition", "SetTextColor",
-"SetTimerColor", "SetFadeTime", "RegisterOnFade", "RegisterOnClick", "SetDisplayGroup", "GetDisplayGroup", "RegisterBar", "UnregisterBar", "SetRepeatingTimer", "UnregisterAllBars", "SetBarIcon"}
+local methods = {"RegisterOnMove", "SetAnchorVisible", "SetMaxBars", "SetBaseColor", "EnableGradient", "SetPoint", "SetScale", "SetWidth", "SetTexture", "SetBarGrowth", "SetIconPosition",
+"SetFadeTime", "RegisterOnFade", "RegisterOnClick", "SetDisplayGroup", "GetDisplayGroup", "RegisterBar", "UnregisterBar", "SetRepeatingTimer", "UnregisterAllBars", "SetBarIcon"}
 
 -- Internal functions for managing bars
 local function getFrame()
@@ -62,15 +62,6 @@ local function getFrame()
 	frame.bg:SetValue(1)
 	frame.bg:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
 	frame.bg:SetFrameLevel(0)
-	
-	--[[
-	-- None available, create a new one
-	frame.button = CreateFrame("Button", nil, frame)
-    	frame.button:EnableMouse(false)
-	frame.button:SetClampedToScreen(true)
-	frame.button:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp", "Button4Up", "Button5Up")
-	frame.button:Hide()
-	]]
 
 	-- Create icon
 	frame.icon = frame:CreateTexture(nil, "ARTWORK")
@@ -104,11 +95,6 @@ local function releaseFrame(frame)
 	-- Reset alpha so everythings visible again
 	frame:SetAlpha(1.0)
 
-	-- Clear out our OnClick info
-	frame.clickHandler = nil
-	frame.clickFunc = nil
-	frame.args = nil
-
 	-- And now readd to the frame pool
 	table.insert(framePool, frame)	
 end
@@ -133,7 +119,6 @@ local function fadeOnUpdate(self, elapsed)
 	-- Done fading, hide
 	if( self.fadeTime <= 0 ) then
 		groups[self.owner]:UnregisterBar(self.barID)
-
 		triggerFadeCallback(groups[self.originalOwner], self.barID)
 		return
 	end
@@ -242,7 +227,7 @@ local function repositionFrames(group)
 		end
 		
 		-- Did we hit the bar limit yet?
-		if( i <= group.maxBars ) then
+		if( not group.maxBars or i <= group.maxBars ) then
 			bar:Show()
 		else
 			bar:Hide()
@@ -337,15 +322,13 @@ function GTB:RegisterGroup(name, texture)
 	obj:SetScale(1.0)
 	obj:SetWidth(200)
 	obj:SetFadeTime(0.25)
-	obj:SetMaxBars(20)
+	obj:SetMaxBars(nil)
 	obj:EnableGradient(true)
 	obj:SetAnchorVisible(true)
 	obj:SetBarGrowth("DOWN")
 	obj:SetIconPosition("LEFT")
 	obj:SetTexture(texture)
 	obj:SetBaseColor(0.0, 1.0, 0.0)
-	obj:SetTextColor(1.0, 1.0, 1.0)
-	obj:SetTimerColor(1.0, 1.0, 1.0)
 	obj:SetPoint("CENTER", UIParent, "CENTER")
 	
 	return obj	
@@ -435,29 +418,19 @@ end
 
 -- Sets the max number of bars that can show up in this group
 function GTB.SetMaxBars(group, max)
-	argcheck(max, 2, "number")
+	argcheck(max, 2, "number", "nil")
 	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "EnableGradient"))
 	
 	group.maxBars = max
+	repositionFrames(group)
 end
 
 -- Group frame positioning, and all the timers inside it
-function GTB.SetPoint(group, point, relativeFrame, relativePoint, xOff, yOff)
-	argcheck(point, 2, "string")
-	argcheck(relativeFrame, 3, "table", "string", "nil")
-	argcheck(relativePoint, 4, "string", "nil")
-	argcheck(xOff, 5, "number", "nil")
-	argcheck(yOff, 6, "number", "nil")
+function GTB.SetPoint(group, ...)
 	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetPoint"))
-		
-	group.point = point
-	group.relativeFrame = relativeFrame
-	group.relativePoint = relativePoint
-	group.xOff = xOff
-	group.yOff = yOff
-	
+			
 	group.frame:ClearAllPoints()
-	group.frame:SetPoint(point, relativeFrame, relativePoint, xOff, yOff)
+	group.frame:SetPoint(...)
 end
 
 -- Bar scale
@@ -490,6 +463,11 @@ function GTB.SetTexture(group, texture)
 	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetTexture"))
 	
 	group.texture = texture
+	
+	for _, bar in pairs(group.bars) do
+		bar.bg:SetStatusBarTexture(texture)
+		bar:SetStatusBarTexture(texture)
+	end
 end
 
 -- Bar growth mode (UP/DOWN)
@@ -498,12 +476,14 @@ function GTB.SetBarGrowth(group, type)
 	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetBarGrowth"))
 	
 	group.barGrowth = type
+	
+	repositionFrames(group)
 end
 
 -- Icon positioning (LEFT/RIGHT)
 function GTB.SetIconPosition(group, position)
-	assert(3, position == "LEFT" or position == "RIGHT", string.format(L["BAD_ARGUMENT"], 2, "SetBarGrowth", "UP, DOWN", tostring(position)))
-	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetBarGrowth"))
+	assert(3, position == "LEFT" or position == "RIGHT", string.format(L["BAD_ARGUMENT"], 2, "SetIconPosition", "LEFT, RIGHT", tostring(position)))
+	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetIconPosition"))
 	
 	group.iconPosition = position
 end
@@ -522,38 +502,6 @@ function GTB.SetBaseColor(group, r, g, b)
 	group.baseColor.r = r
 	group.baseColor.g = g
 	group.baseColor.b = b
-end
-
--- Text color
-function GTB.SetTextColor(group, r, g, b)
-	argcheck(r, 2, "number")
-	argcheck(g, 3, "number")
-	argcheck(b, 4, "number")
-	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetTextColor"))
-	
-	if( not group.textColor ) then
-		group.textColor = {}
-	end
-	
-	group.textColor.r = r
-	group.textColor.g = g
-	group.textColor.b = b	
-end
-
--- Timer text color
-function GTB.SetTimerColor(group, r, g, b)
-	argcheck(r, 2, "number")
-	argcheck(g, 3, "number")
-	argcheck(b, 4, "number")
-	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetTimerColor"))
-	
-	if( not group.timerColor ) then
-		group.timerColor = {}
-	end
-	
-	group.timerColor.r = r
-	group.timerColor.g = g
-	group.timerColor.b = b	
 end
 
 -- How many seconds we should take to fade out
@@ -584,7 +532,7 @@ end
 
 -- Gets the current display group
 function GTB.GetDisplayGroup(group)
-	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetDisplayGroup"))
+	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "GetDisplayGroup"))
 	
 	return group.redirectTo
 end
@@ -598,10 +546,11 @@ function GTB.RegisterBar(group, id, text, seconds, startSeconds, icon, r, g, b)
 	argcheck(id, 2, "string", "number")
 	argcheck(text, 3, "string")
 	argcheck(seconds, 4, "number")
-	argcheck(icon, 5, "string", "nil")
-	argcheck(r, 6, "number", "nil")
-	argcheck(g, 7, "number", "nil")
-	argcheck(b, 8, "number", "nil")
+	argcheck(startSeconds, 5, "number", "nil")
+	argcheck(icon, 6, "string", "nil")
+	argcheck(r, 7, "number", "nil")
+	argcheck(g, 8, "number", "nil")
+	argcheck(b, 9, "number", "nil")
 	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "RegisterBar"))
 	
 	local originalOwner = group.name
@@ -744,9 +693,7 @@ function GTB.UnregisterBar(group, id)
 	-- Remove the old entry, if it exists
 	if( not group.bars[id] ) then
 		return nil
-
 	end
-	
 
 	-- Remove from list of used bars
 	for i=#(group.usedBars), 1, -1 do
@@ -795,7 +742,7 @@ function GTB.SetBarIcon(group, id, icon, left, right, top, bottom)
 		
 			bar.icon:SetWidth(group.height)
 			bar.icon:SetHeight(group.height)
-			bar.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+			bar.icon:SetTexCoord(left or 0.07, right or 0.93, top or 0.07, bottom or 0.93)
 			bar.icon:SetPoint("TOPLEFT", bar, "TOP" .. group.iconPosition, mod * group.height, 0)
 			bar.icon:Show()
 		else
@@ -821,29 +768,4 @@ function GTB.SetRepeatingTimer(group, id, flag)
 	if( bar ) then
 		bar.repeating = flag
 	end
-end
-
--- Associate OnClick
-function GTB.RegisterOnClick(group, id, handler, func, ...)
-	argcheck(id, 2, "string", "number")
-	argcheck(handler, 3, "table", "nil")
-	argcheck(func, 4, "function", "string")
-	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "RegisterOnClick"))
-	
-	-- Check if we're supposed to redirect this to another group, and that the group exists
-	if( group.redirectTo and groups[group.redirectTo] ) then
-		group = groups[group.redirectTo]
-	end
-
-	local bar = group.bars[id]
-	if( not bar ) then
-		return
-	end
-	
-	bar:EnableMouse(true)
-
-	-- Save for when we actually click
-	bar.clickHandler = handler
-	bar.clickFunc = func
-	bar.args = {...}
 end
