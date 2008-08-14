@@ -38,7 +38,7 @@ function DRTracker:OnInitialize()
 	
 	-- Remove the old fields
 	if( self.db.profile.disableSpells ) then
-		self.db.proifle.showSpells = nil
+		self.db.profile.showSpells = nil
 		self.db.profile.disableSpells = nil
 	end
 	
