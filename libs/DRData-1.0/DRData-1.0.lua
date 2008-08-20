@@ -60,6 +60,9 @@ Data.spells = {
 	[14326] = "fear",
 	[14327] = "fear",
 	
+	-- Turn Evil
+	[10326] = "fear",
+	
 	-- Intimidating Shout
 	[5246] = "fear",
 			
@@ -106,6 +109,9 @@ Data.spells = {
 	[30414] = "ctrlstun",
 	
 	--[[ RANDOM STUNS ]]--
+	-- Stoneclaw Stun
+	[39796] = "rndstun",
+	
 	-- Starfire Stun
 	[16922] = "rndstun",
 	
@@ -123,6 +129,9 @@ Data.spells = {
 	
 	-- Impact
 	[12355] = "rndstun",
+	
+	-- Revenge Stun
+	[12798] = "rndstun",
 	
 	--[[ CYCLONE ]]--
 	-- Blind
@@ -151,6 +160,13 @@ Data.spells = {
 	[9853] = "root",
 	[26989] = "root",
 
+	--[[ RANDOM ROOTS ]]--
+	-- Improved Hamstring
+	[23694] = "rndroot",
+	
+	-- Frostbite
+	[12494] = "rndroot",
+
 	--[[ SLEEPS ]]--
 	-- Hibernate
 	[2637] = "sleep",
@@ -162,7 +178,7 @@ Data.spells = {
 	[24132] = "sleep",
 	[24133] = "sleep",
 	[27068] = "sleep",
-
+	
 	--[[ MISC ]]--
 	-- Chastise (Maybe this shares DR with Imp HS?)
 	[44041] = "chastise",
@@ -194,16 +210,13 @@ Data.spells = {
 	-- Kidney Shot
 	[408] = "ks",
 	[8643] = "ks",
-
-	-- Improved Hamstring
-	[23694] = "imphs",
 }
 
 -- DR Category names
 Data.typeNames = {
 	["disorient"] = "Disorients",
 	["fear"] = "Fears",
-	["ctrlstun"] = "Control Stuns",
+	["ctrlstun"] = "Controlled Stuns",
 	["rndstun"] = "Random Stuns",
 	["cyclone"] = "Cyclone/Blind",
 	["ks"] = "Kidney Shot",
@@ -211,9 +224,10 @@ Data.typeNames = {
 	["chastise"] = "Chastise",
 	["scatters"] = "Scatter Shot",
 	["freezetrap"] = "Freeze Trap",
+	["rndroot"]  = "Random Roots",
 	["dc"] = "Death Coil",
 	["sleep"] = "Sleep",
-	["root"] = "Roots",
+	["root"] = "Controlled Roots",
 	["impconc"] = "Imp Concussive Shot",
 }
 
