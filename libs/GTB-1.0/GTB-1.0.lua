@@ -1,5 +1,5 @@
 local major = "GTB-1.0"
-local minor = tonumber(string.match("$Revision: 843 $", "(%d+)") or 1)
+local minor = tonumber(string.match("$Revision: 955 $", "(%d+)") or 1)
 
 assert(LibStub, string.format("%s requires LibStub.", major))
 
@@ -41,8 +41,8 @@ GTB.groups = GTB.groups or {}
 
 local framePool = GTB.framePool
 local groups = GTB.groups
-local methods = {"RegisterOnMove", "SetAnchorVisible", "SetMaxBars", "SetBaseColor", "EnableGradient", "SetPoint", "SetScale", "SetWidth", "SetTexture", "SetBarGrowth", "SetIconPosition",
-"SetFadeTime", "RegisterOnFade", "RegisterOnClick", "SetDisplayGroup", "GetDisplayGroup", "RegisterBar", "UnregisterBar", "SetRepeatingTimer", "UnregisterAllBars", "SetBarIcon"}
+local methods = {"RegisterOnMove", "SetAnchorVisible", "SetMaxBars", "SetBaseColor", "EnableGradient", "SetFont", "SetPoint", "SetScale", "SetWidth", "SetTexture", "SetBarGrowth", "SetIconPosition",
+"SetFadeTime", "SetBackgroundColor", "RegisterOnFade", "RegisterOnClick", "SetDisplayGroup", "GetDisplayGroup", "RegisterBar", "UnregisterBar", "SetRepeatingTimer", "UnregisterAllBars", "SetBarIcon"}
 
 -- Internal functions for managing bars
 local function getFrame()
@@ -118,7 +118,7 @@ local function fadeOnUpdate(self, elapsed)
 
 	-- Done fading, hide
 	if( self.fadeTime <= 0 ) then
-		groups[self.owner]:UnregisterBar(self.barID)
+		groups[self.owner]:UnregisterBar(self.barID, true)
 		triggerFadeCallback(groups[self.originalOwner], self.barID)
 		return
 	end
@@ -132,7 +132,7 @@ local function fadeoutBar(self)
 	
 	-- Don't fade at all, remove right now
 	if( group.fadeTime <= 0 ) then
-		group:UnregisterBar(self.barID)	
+		group:UnregisterBar(self.barID, true)	
 		triggerFadeCallback(groups[self.originalOwner])
 		return
 	end
@@ -321,7 +321,7 @@ function GTB:RegisterGroup(name, texture)
 	
 	obj:SetScale(1.0)
 	obj:SetWidth(200)
-	obj:SetFadeTime(0.25)
+	obj:SetFadeTime(0.10)
 	obj:SetMaxBars(nil)
 	obj:EnableGradient(true)
 	obj:SetAnchorVisible(true)
@@ -329,6 +329,7 @@ function GTB:RegisterGroup(name, texture)
 	obj:SetIconPosition("LEFT")
 	obj:SetTexture(texture)
 	obj:SetBaseColor(0.0, 1.0, 0.0)
+	obj:SetBackgroundColor(nil, nil, nil)
 	obj:SetPoint("CENTER", UIParent, "CENTER")
 	
 	return obj	
@@ -440,6 +441,33 @@ function GTB.SetScale(group, scale)
 	
 	group.scale = scale
 	group.frame:SetScale(scale)
+	
+	for _, bar in pairs(group.bars) do
+		bar:SetScale(scale)
+	end
+end
+
+-- Set font/font size
+function GTB.SetFont(group, path, size, style)
+	argcheck(path, 2, "string")
+	argcheck(size, 3, "number")
+	argcheck(style, 4, "string", "nil")
+	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetFont"))
+	
+	group.fontSize = size
+	group.fontPath = path
+	group.fontStyle = style
+	
+	-- Update running bars
+	local path, size, style = GameFontHighlight:GetFont()
+	path = group.fontPath or path
+	style = group.fontStyle or style
+	size = group.fontSize or size
+
+	for _, bar in pairs(group.bars) do
+		bar.timer:SetFont(path, size, style)
+		bar.text:SetFont(path, size, style)
+	end
 end
 
 -- Width of all the bars
@@ -490,9 +518,9 @@ end
 
 -- Group object
 function GTB.SetBaseColor(group, r, g, b)
-	argcheck(r, 2, "number")
-	argcheck(g, 3, "number")
-	argcheck(b, 4, "number")
+	argcheck(r, 2, "number", "nil")
+	argcheck(g, 3, "number", "nil")
+	argcheck(b, 4, "number", "nil")
 	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetBaseColor"))
 	
 	if( not group.baseColor ) then
@@ -502,6 +530,33 @@ function GTB.SetBaseColor(group, r, g, b)
 	group.baseColor.r = r
 	group.baseColor.g = g
 	group.baseColor.b = b
+
+	for _, bar in pairs(group.bars) do
+		bar:SetStatusBarColor(frame.startR or group.baseColor.r, frame.startG or group.baseColor.g, frame.startB or group.baseColor.b)
+	end
+end
+
+function GTB.SetBackgroundColor(group, r, g, b)
+	argcheck(r, 2, "number", "nil")
+	argcheck(g, 3, "number", "nil")
+	argcheck(b, 4, "number", "nil")
+	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "SetBackgroundColor"))
+	
+	if( not group.bgColor ) then
+		group.bgColor = {}
+	end
+	
+	group.bgColor.r = r
+	group.bgColor.g = g
+	group.bgColor.b = b
+
+	for _, bar in pairs(group.bars) do
+		if( group.bgColor ) then
+			bar.bg:SetStatusBarColor(group.bgColor.r or 0.0, group.bgColor.g or 0.5, group.bgColor.b or 0.5, 0.5)
+		else
+			bar.bg:SetStatusBarColor(0.0, 0.5, 0.5, 0.5)
+		end
+	end
 end
 
 -- How many seconds we should take to fade out
@@ -562,7 +617,7 @@ function GTB.RegisterBar(group, id, text, seconds, startSeconds, icon, r, g, b)
 	
 	-- Already exists, remove the old one quickly
 	if( group.bars[id] ) then
-		group:UnregisterBar(id)
+		group:UnregisterBar(id, true)
 	end
 
 	-- Retrieve a frame thats either recycled, or a newly created one
@@ -573,6 +628,8 @@ function GTB.RegisterBar(group, id, text, seconds, startSeconds, icon, r, g, b)
 
 	-- Grab basic info about the font
 	local path, size, style = GameFontHighlight:GetFont()
+	path = group.fontPath or path
+	style = group.fontStyle or style
 	size = group.fontSize or size
 	
 	-- Timer text
@@ -623,6 +680,9 @@ function GTB.RegisterBar(group, id, text, seconds, startSeconds, icon, r, g, b)
 	frame.r = r or group.baseColor.r
 	frame.g = g or group.baseColor.g
 	frame.b = b or group.baseColor.b
+	frame.startR = r
+	frame.startG = g
+	frame.startB = b
 	frame.owner = group.name
 	frame.originalOwner = originalOwner
 	frame.lastUpdate = GetTime()
@@ -637,10 +697,15 @@ function GTB.RegisterBar(group, id, text, seconds, startSeconds, icon, r, g, b)
 		
 	-- Setup background
 	frame.bg:SetStatusBarTexture(group.texture)
-	frame.bg:SetStatusBarColor(0.0, 0.5, 0.5, 0.5)
 	frame.bg:SetWidth(group.width)
 	frame.bg:SetHeight(group.height)
 	
+	if( group.bgColor ) then
+		frame.bg:SetStatusBarColor(group.bgColor.r or 0.0, group.bgColor.g or 0.5, group.bgColor.b or 0.5, 0.5)
+	else
+		frame.bg:SetStatusBarColor(0.0, 0.5, 0.5, 0.5)
+	end
+
 	-- Start it up
 	frame:SetStatusBarTexture(group.texture)
 	frame:SetStatusBarColor(frame.r, frame.g, frame.b)
@@ -681,7 +746,7 @@ function GTB.UnregisterAllBars(group)
 end
 
 -- Unregistering
-function GTB.UnregisterBar(group, id)
+function GTB.UnregisterBar(group, id, noFade)
 	argcheck(id, 2, "string", "number")
 	assert(3, group.name and groups[group.name], string.format(L["MUST_CALL"], "UnregisterBar"))
 	
@@ -698,14 +763,20 @@ function GTB.UnregisterBar(group, id)
 	-- Remove from list of used bars
 	for i=#(group.usedBars), 1, -1 do
 		if( group.usedBars[i].barID == id ) then
-			table.remove(group.usedBars, i)
+			if( noFade or group.fadeTime <= 0 ) then
+				table.remove(group.usedBars, i)
+			else
+				fadeoutBar(group.usedBars[i])
+			end
 			break
 		end
 	end
 
-	releaseFrame(group.bars[id])
-	repositionFrames(group)
-	group.bars[id] = nil
+	if( noFade or group.fadeTime <= 0 ) then
+		releaseFrame(group.bars[id])
+		repositionFrames(group)
+		group.bars[id] = nil
+	end
 	
 	return true
 end

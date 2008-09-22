@@ -15,12 +15,13 @@ function DRTracker:OnInitialize()
 			texture = "BantoBar",
 			showAnchor = false,
 			showName = true,
+			showNPC = true,
 			growUp = false,
 			
 			disabled = {EnemyDRChanged = {}, FriendlyDRChanged = {}},
 			
 			showType = {enemy = true, friendly = false},
-			inside = {["pvp"] = true, ["arena"] = true},
+			inside = {["arena"] = true},
 		},
 	}
 
@@ -34,6 +35,9 @@ function DRTracker:OnInitialize()
 		["fear"] = "Interface\\Icons\\Spell_Shadow_Possession",
 		["disorient"] = "Interface\\Icons\\Ability_Gouge",
 		["root"] = "Interface\\Icons\\Spell_Frost_FrostNova",
+		["sleep"] = "Interface\\Icons\\Spell_Nature_Sleep",
+		["cyclone"] = "Interface\\Icons\\Spell_Nature_EarthBind",
+		["rndroot"] = "Interface\\Icons\\Ability_ShockWave",
 	}
 	
 	-- Remove the old fields
@@ -99,6 +103,9 @@ end
 
 function DRTracker:OnDisable()
 	GTBGroup:UnregisterAllBars()
+	self:UnregisterAllEvents()
+	self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA")
 end
 
 function DRTracker:DRChanged(event, spellID, resetIn, drCategory, diminished, name, guid)
@@ -198,15 +205,18 @@ end
 
 -- DR TRACKING
 local trackedPlayers = {}
-local function debuffGained(spellID, destName, destGUID, isEnemy)
-	if( not destName ) then return end
+local function debuffGained(spellID, destName, destGUID, isEnemy, isPlayer)
+	-- Not a player, and this category isn't diminished in PVE, as well as make sure we want to track NPCs
+	local drCat = DRData:GetSpellCategory(spellID)
+	if( not isPlayer and ( not DRTracker.db.profile.showNPC or not DRData:IsPVE(drCat) ) ) then
+		return
+	end
 	
 	if( not trackedPlayers[destGUID] ) then
 		trackedPlayers[destGUID] = {}
 	end
 
 	-- See if we should reset it back to undiminished
-	local drCat = DRData:GetSpellCategory(spellID)
 	local tracked = trackedPlayers[destGUID][drCat]
 	if( tracked and tracked.reset <= GetTime() ) then
 		tracked.diminished = 1.0
@@ -214,9 +224,11 @@ local function debuffGained(spellID, destName, destGUID, isEnemy)
 end
 
 local function debuffFaded(spellID, destName, destGUID, isEnemy)
-	if( not destName ) then return end
-	
 	local drCat = DRData:GetSpellCategory(spellID)
+	if( not isPlayer and ( not DRTracker.db.profile.showNPC or not DRData:IsPVE(drCat) ) ) then
+		return
+	end
+
 	if( not trackedPlayers[destGUID] ) then
 		trackedPlayers[destGUID] = {}
 	end
@@ -252,20 +264,22 @@ local COMBATLOG_OBJECT_CONTROL_PLAYER = COMBATLOG_OBJECT_CONTROL_PLAYER
 
 local eventRegistered = {["SPELL_AURA_APPLIED"] = true, ["SPELL_AURA_REMOVED"] = true, ["PARTY_KILL"] = true, ["UNIT_DIED"] = true}
 function DRTracker:COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, eventType, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, spellID, spellName, spellSchool, auraType)
-	if( not eventRegistered[eventType] or ( bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) ~= COMBATLOG_OBJECT_TYPE_PLAYER and bit.band(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) ~= COMBATLOG_OBJECT_CONTROL_PLAYER ) ) then
+	if( not eventRegistered[eventType] ) then
 		return
 	end
 	
 	-- Enemy gained a debuff
 	if( eventType == "SPELL_AURA_APPLIED" ) then
 		if( auraType == "DEBUFF" and DRData:GetSpellCategory(spellID) ) then
-			debuffGained(spellID, destName, destGUID, (bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE))
+			local isPlayer = ( bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) ~= COMBATLOG_OBJECT_TYPE_PLAYER or bit.band(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) ~= COMBATLOG_OBJECT_CONTROL_PLAYER )
+			debuffGained(spellID, destName, destGUID, (bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE), isPlayer)
 		end
 	
 	-- Buff or debuff faded from an enemy
 	elseif( eventType == "SPELL_AURA_REMOVED" ) then
 		if( auraType == "DEBUFF" and DRData:GetSpellCategory(spellID) ) then
-			debuffFaded(spellID, destName, destGUID, (bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE))
+			local isPlayer = ( bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) ~= COMBATLOG_OBJECT_TYPE_PLAYER or bit.band(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) ~= COMBATLOG_OBJECT_CONTROL_PLAYER )
+			debuffFaded(spellID, destName, destGUID, (bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE), isPlayer)
 		end
 		
 	-- Don't use UNIT_DIED inside arenas due to accuracy issues, outside of arenas we don't care too much

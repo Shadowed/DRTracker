@@ -259,8 +259,15 @@ local function loadOptions()
 				width = "full",
 				arg = "inside"
 			},
+			showNPC = {
+				order = 8,
+				type = "toggle",
+				name = L["Show NPC diminishing returns"],
+				width = "full",
+				arg = "showNPC",
+			},
 			showType = {
-				order = 7,
+				order = 9,
 				type = "multiselect",
 				name = L["Show diminishing returns for"],
 				desc = L["Allows you to set if diminishing returns should be shown for friendly players and/or enemy players. Use show self if you only want your DRs but not all friendly players."],

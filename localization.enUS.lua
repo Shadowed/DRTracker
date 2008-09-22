@@ -29,6 +29,8 @@ DRTrackerLocals = {
 	["Bar width"] = "Bar width",
 	["Bar texture"] = "Bar texture",
 
+	["Show NPC diminishing returns"] = "Show NPC diminishing returns",
+	
 	["Redirect bars to group"] = "Redirect bars to group",
 	["Group name to redirect bars to, this lets you show DRTracker timers under another addons bar group. Requires the bars to be created using GTB."] = "Group name to redirect bars to, this lets you show DRtracker timers under another addons bar group. Requires the bars to be created using GTB.",
 
