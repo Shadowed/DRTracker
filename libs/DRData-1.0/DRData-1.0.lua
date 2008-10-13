@@ -6,8 +6,6 @@ assert(LibStub, string.format("%s requires LibStub.", major))
 local Data = LibStub:NewLibrary(major, minor)
 if( not Data ) then return end
 
-if( IS_WRATH_BUILD == nil ) then IS_WRATH_BUILD = (select(4, GetBuildInfo()) >= 30000) end
-
 -- How long before DR resets
 Data.RESET_TIME = 18
 
@@ -16,20 +14,20 @@ Data.spells = {
 	--[[ DISORIENTS ]]--
 	-- Maim
 	[22570] = "disorient",
+	[49802] = "disorient",
 
 	-- Sap
 	[6770] = "disorient",
 	[2070] = "disorient",
 	[11297] = "disorient",
+	[51724] = "disorient",
 	
-	-- Gouge (Remove all except 1776 come WoTLK)
+	-- Gouge
 	[1776] = "disorient",
-	[1777] = "disorient",
-	[8629] = "disorient",
-	[11285] = "disorient",
-	[11286] = "disorient",
-	[38764] = "disorient",
 		
+	-- Hex (Guessing)
+	[51514] = "disorient",
+
 	-- Polymorph
 	[118] = "disorient",
 	[12824] = "disorient",
@@ -37,6 +35,11 @@ Data.spells = {
 	[28272] = "disorient",
 	[28271] = "disorient",
 	[12826] = "disorient",
+	[61305] = "disorient",
+	[61025] = "disorient",
+	
+	-- Repentance
+	[20066] = "disorient",
 
 	--[[ FEARS ]]--
 	-- Fear (Warlock)
@@ -85,6 +88,7 @@ Data.spells = {
 	[9823] = "ctrlstun",
 	[9827] = "ctrlstun",
 	[27006] = "ctrlstun",
+	[49803] = "ctrlstun",
 	
 	-- Intimidation
 	[19577] = "ctrlstun",
@@ -99,12 +103,8 @@ Data.spells = {
 	[20549] = "ctrlstun",
 
 	-- Intercept
-	[20253] = "ctrlstun",
-	[20614] = "ctrlstun",
-	[20615] = "ctrlstun",
-	[25273] = "ctrlstun",
-	[25274] = "ctrlstun",
-	
+	[20252] = "ctrlstun",
+		
 	-- Shadowfury
 	[30283] = "ctrlstun", 
 	[30413] = "ctrlstun",
@@ -112,6 +112,9 @@ Data.spells = {
 	
 	-- Impact
 	[12355] = "ctrlstun",
+	
+	-- Gnaw (Ghoul)
+	[47481] = "ctrlstun",
 
 	--[[ RANDOM STUNS ]]--
 	-- Stoneclaw Stun
@@ -152,6 +155,7 @@ Data.spells = {
 	[6131] = "root",
 	[10230] = "root",
 	[27088] = "root",
+	[42917] = "root",
 	
 	-- Entangling Roots
 	[339] = "root",
@@ -161,6 +165,7 @@ Data.spells = {
 	[9852] = "root",
 	[9853] = "root",
 	[26989] = "root",
+	[53308] = "root",
 
 	--[[ RANDOM ROOTS ]]--
 	-- Improved Hamstring
@@ -180,6 +185,8 @@ Data.spells = {
 	[24132] = "sleep",
 	[24133] = "sleep",
 	[27068] = "sleep",
+	[49011] = "sleep",
+	[49012] = "sleep",
 	
 	--[[ MISC ]]--
 	-- Chastise (Maybe this shares DR with Imp HS?)
@@ -208,6 +215,8 @@ Data.spells = {
 	[17925] = "dc",
 	[17926] = "dc",
 	[27223] = "dc",
+	[47859] = "dc",
+	[47860] = "dc",
 
 	-- Kidney Shot
 	[408] = "ks",
@@ -218,42 +227,6 @@ Data.spells = {
 	[10911] = "charm",
 	[10912] = "charm",
 }
-
--- Add WoTLK spells
-if( IS_WRATH_BUILD ) then
-	-- Death Coil
-	Data.spells[47859] = "dc"
-	Data.spells[47860] = "dc"
-	
-	-- Wyvern Sting
-	Data.spells[49011] = "sleep"
-	Data.spells[49012] = "sleep"
-	
-	-- Entangling Roots
-	Data.spells[53308] = "root"
-	
-	-- Frost Nova
-	Data.spells[42917] = "root"
-	
-	-- Intercept (Remove all except this one come WoTLK)
-	Data.spells[20252] = "ctrlstun"
-	
-	-- Pounce
-	Data.spells[49803] = "ctrlstun"
-	
-	-- Polymorph
-	Data.spells[61305] = "disorient"
-	Data.spells[61025] = "disorient"
-	
-	-- Sap
-	Data.spells[51724] = "disorient"
-	
-	-- Maim
-	Data.spells[49802] = "disorient"
-	
-	-- Hex (Guessing)
-	Data.spells[51514] = "disorient"
-end
 
 -- DR Category names
 Data.typeNames = {

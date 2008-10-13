@@ -1,4 +1,4 @@
-## Interface: 20400
+## Interface: 30000
 ## Title: DR Tracker
 ## Notes: Diminishing returns tracker
 ## Author: Mayen

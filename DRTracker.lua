@@ -86,22 +86,13 @@ function DRTracker:OnInitialize()
 	-- Monitor for zone change
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA")
-
-	-- Quick check
-	self:ZONE_CHANGED_NEW_AREA()
-
 end
 
-function DRTracker:OnEnable()
-	local type = select(2, IsInInstance())
-	if( not self.db.profile.inside[type] ) then
-		return
-	end
-	
+function DRTracker:Enable()
 	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 end
 
-function DRTracker:OnDisable()
+function DRTracker:Disable()
 	GTBGroup:UnregisterAllBars()
 	self:UnregisterAllEvents()
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
@@ -151,12 +142,12 @@ end
 function DRTracker:ZONE_CHANGED_NEW_AREA()
 	local type = select(2, IsInInstance())
 
+	-- Check if it's supposed to be enabled in this zone
 	if( type ~= instanceType ) then
-		-- Check if it's supposed to be enabled in this zone
 		if( self.db.profile.inside[type] ) then
-			self:OnEnable()
+			self:Enable()
 		else
-			self:OnDisable()
+			self:Disable()
 		end
 	end
 		
@@ -177,8 +168,10 @@ function DRTracker:Print(msg)
 end
 
 function DRTracker:Reload()
-	self:OnDisable()
-	self:OnEnable()
+	self:Disable()
+	if( self.db.profile.inside[select(2, IsInInstance())] ) then
+		self:Enable()
+	end
 
 	GTBGroup:SetScale(self.db.profile.scale)
 	GTBGroup:SetWidth(self.db.profile.width)
@@ -223,7 +216,7 @@ local function debuffGained(spellID, destName, destGUID, isEnemy, isPlayer)
 	end
 end
 
-local function debuffFaded(spellID, destName, destGUID, isEnemy)
+local function debuffFaded(spellID, destName, destGUID, isEnemy, isPlayer)
 	local drCat = DRData:GetSpellCategory(spellID)
 	if( not isPlayer and ( not DRTracker.db.profile.showNPC or not DRData:IsPVE(drCat) ) ) then
 		return
@@ -271,14 +264,14 @@ function DRTracker:COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, eventType, sour
 	-- Enemy gained a debuff
 	if( eventType == "SPELL_AURA_APPLIED" ) then
 		if( auraType == "DEBUFF" and DRData:GetSpellCategory(spellID) ) then
-			local isPlayer = ( bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) ~= COMBATLOG_OBJECT_TYPE_PLAYER or bit.band(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) ~= COMBATLOG_OBJECT_CONTROL_PLAYER )
+			local isPlayer = ( bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER or bit.band(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER )
 			debuffGained(spellID, destName, destGUID, (bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE), isPlayer)
 		end
 	
 	-- Buff or debuff faded from an enemy
 	elseif( eventType == "SPELL_AURA_REMOVED" ) then
 		if( auraType == "DEBUFF" and DRData:GetSpellCategory(spellID) ) then
-			local isPlayer = ( bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) ~= COMBATLOG_OBJECT_TYPE_PLAYER or bit.band(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) ~= COMBATLOG_OBJECT_CONTROL_PLAYER )
+			local isPlayer = ( bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER or bit.band(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER )
 			debuffFaded(spellID, destName, destGUID, (bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE), isPlayer)
 		end
 		
