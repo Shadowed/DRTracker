@@ -40,8 +40,8 @@ DRTrackerLocals = {
 	["Enemy DR filter"] = "Enemy DR filter",
 	["Friendly DR filter"] = "Friendly DR filter",
 	["List"] = "List",
-	["Lets you choose which diminishing return categories should be disabled."] = "Lets you choose which diminishing return categories should be disabled.",
-	["Disable category %s.\n\nSpells in this category:\n%s"] = "Disable category %s.\n\nSpells in this category:\n%s",
+	["Lets you choose which diminishing return categories should be enabled."] = "Lets you choose which diminishing return categories should be enabled.",
+	["Enable category %s.\n\nSpells in this category:\n%s"] = "Enable category %s.\n\nSpells in this category:\n%s",
 	
 	["Show enemies"] = "Show enemies",
 	["Show friendlies"] = "Show friendlies",

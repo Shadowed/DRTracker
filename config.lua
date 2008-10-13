@@ -50,6 +50,14 @@ local function get(info)
 	end
 end
 
+local function reverseSet(info, value)
+	return set(info, not value)
+end
+
+local function reverseGet(info, value)
+	return not get(info)
+end
+
 local function setNumber(info, value)
 	set(info, tonumber(value))
 end
@@ -123,7 +131,7 @@ local function getTooltip(DRData, cat, name)
 	for spellID, drCat in pairs(DRData:GetSpells()) do
 		if( drCat == cat ) then
 			local name = GetSpellInfo(spellID)
-			if( not alreadyAdded[name] ) then
+			if( name and not alreadyAdded[name] ) then
 				alreadyAdded[name] = true
 				table.insert(spells, name)
 			end
@@ -132,7 +140,7 @@ local function getTooltip(DRData, cat, name)
 	
 	table.sort(spells, sortSpells)
 	
-	return string.format(L["Disable category %s.\n\nSpells in this category:\n%s"], name, table.concat(spells, "\n"))
+	return string.format(L["Enable category %s.\n\nSpells in this category:\n%s"], name, table.concat(spells, "\n"))
 end
 
 local function createDRFilters(text, configKey)
@@ -140,14 +148,14 @@ local function createDRFilters(text, configKey)
 		type = "group",
 		order = 3,
 		name = text,
-		get = get,
-		set = set,
+		get = reverseGet,
+		set = reverseSet,
 		handler = Config,
 		args = {
 			desc = {
 				order = 0,
 				type = "description",
-				name = L["Lets you choose which diminishing return categories should be disabled."],
+				name = L["Lets you choose which diminishing return categories should be enabled."],
 			},
 			list = {
 				order = 1,
