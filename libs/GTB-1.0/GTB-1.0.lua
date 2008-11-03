@@ -1,5 +1,5 @@
 local major = "GTB-1.0"
-local minor = tonumber(string.match("$Revision: 955 $", "(%d+)") or 1)
+local minor = tonumber(string.match("$Revision: 1000 $", "(%d+)") or 1)
 
 assert(LibStub, string.format("%s requires LibStub.", major))
 
@@ -174,7 +174,7 @@ local function barOnUpdate(self)
 	local seconds = self.secondsLeft - ((hour * 3600) + (minutes * 60))
 	
 	if( hour > 0 ) then
-		self.timer:SetFormattedText("%d:%02d", hour, minute)
+		self.timer:SetFormattedText("%d:%02d", hour, minutes)
 	elseif( minutes > 0 ) then
 		self.timer:SetFormattedText("%d:%02d", minutes, floor(seconds))
 	elseif( seconds < 10 ) then
