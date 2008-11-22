@@ -72,6 +72,12 @@ Data.spells = {
 	[5246] = "fear",
 			
 	--[[ CONTROL STUNS ]]--
+	-- Concussion Blow
+	[12809] = "ctrlstun",
+	
+	-- Shockwave
+	[46968] = "ctrlstun",
+	
 	-- Hammer of Justice
 	[853] = "ctrlstun",
 	[5588] = "ctrlstun",
