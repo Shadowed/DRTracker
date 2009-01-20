@@ -27,7 +27,12 @@ Data.spells = {
 		
 	-- Hex (Guessing)
 	[51514] = "disorient",
-
+	
+	-- Shackle
+	[9484] = "disorient",
+	[9485] = "disorient",
+	[10955] = "disorient",
+	
 	-- Polymorph
 	[118] = "disorient",
 	[12824] = "disorient",
@@ -40,7 +45,55 @@ Data.spells = {
 	
 	-- Repentance
 	[20066] = "disorient",
+	
+	-- Divine Hymn (Maybe this isn't shared?)
+	[47953] = "disorient",
+	
+	--[[ SILENCES ]]--
+	-- Garrote
+	[1330] = "silence",
+	
+	-- Arcane Torrent (Energy version)
+	[25046] = "silence",
+	
+	-- Arcane Torrent (Mana version)
+	[28730] = "silence",
+	
+	-- Arcane Torrent (Runic power version)
+	[50613] = "silence",
+	
+	-- Silence
+	[15487] = "silence",
 
+	-- Silencing Shot
+	[34490] = "silence",
+
+	-- Improved Kick
+	[18425] = "silence",
+
+	-- Improved Counterspell
+	[18469] = "silence",
+	
+	-- Strangulate
+	[47476] = "silence",
+	[49913] = "silence",
+	[49914] = "silence",
+	[49915] = "silence",
+	[49916] = "silence",
+	
+	-- Gag Order (talent)
+	[18498] = "silence",
+	
+	--[[ DISARMS ]]--
+	-- Dismantle
+	[51722] = "disarm",
+	
+	-- Disarm
+	[676] = "disarm",
+	
+	-- Chimera Shot - Scorpid
+	[53359] = "disarm",
+	
 	--[[ FEARS ]]--
 	-- Fear (Warlock)
 	[5782] = "fear",
@@ -102,15 +155,19 @@ Data.spells = {
 	-- Charge
 	[7922] = "ctrlstun",
 
-	-- Cheap Shot
-	[1833] = "ctrlstun",
+	-- Kidney Shot
+	[408] = "ctrlstun",
+	[8643] = "ctrlstun",
 
 	-- War Stomp
 	[20549] = "ctrlstun",
 
 	-- Intercept
 	[20252] = "ctrlstun",
-		
+	
+	-- Deep Freeze
+	[44572] = "ctrlstun",
+			
 	-- Shadowfury
 	[30283] = "ctrlstun", 
 	[30413] = "ctrlstun",
@@ -121,7 +178,10 @@ Data.spells = {
 	
 	-- Gnaw (Ghoul)
 	[47481] = "ctrlstun",
-
+	
+	-- Glyph of Death Grip
+	[58628] = "ctrlstun",
+	
 	--[[ RANDOM STUNS ]]--
 	-- Stoneclaw Stun
 	[39796] = "rndstun",
@@ -195,14 +255,6 @@ Data.spells = {
 	[49012] = "sleep",
 	
 	--[[ MISC ]]--
-	-- Chastise (Maybe this shares DR with Imp HS?)
-	[44041] = "chastise",
-	[44043] = "chastise",
-	[44044] = "chastise",
-	[44045] = "chastise",
-	[44046] = "chastise",
-	[44047] = "chastise",
-
 	-- Scatter Shot
 	[19503] = "scatters",
 	
@@ -223,25 +275,25 @@ Data.spells = {
 	[27223] = "dc",
 	[47859] = "dc",
 	[47860] = "dc",
-
-	-- Kidney Shot
-	[408] = "ks",
-	[8643] = "ks",
 	
 	-- Mind Control
 	[605] = "charm",
 	[10911] = "charm",
 	[10912] = "charm",
+
+	-- Cheap Shot
+	[1833] = "cheapshot",
 }
 
 -- DR Category names
 Data.typeNames = {
+	["disarm"] = "Disarm",
 	["disorient"] = "Disorients",
 	["fear"] = "Fears",
 	["ctrlstun"] = "Controlled Stuns",
 	["rndstun"] = "Random Stuns",
 	["cyclone"] = "Cyclone/Blind",
-	["ks"] = "Kidney Shot",
+	["cheapshot"] = "Cheap Shot",
 	["chastise"] = "Chastise",
 	["scatters"] = "Scatter Shot",
 	["freezetrap"] = "Freeze Trap",
@@ -251,6 +303,7 @@ Data.typeNames = {
 	["root"] = "Controlled Roots",
 	["impconc"] = "Imp Concussive Shot",
 	["charm"] = "Charms",
+	["silence"] = "Silences",
 }
 
 -- Categories that have DR in PvE as well as PvP
