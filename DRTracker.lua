@@ -38,6 +38,7 @@ function DRTracker:OnInitialize()
 		["sleep"] = "Interface\\Icons\\Spell_Nature_Sleep",
 		["cyclone"] = "Interface\\Icons\\Spell_Nature_EarthBind",
 		["rndroot"] = "Interface\\Icons\\Ability_ShockWave",
+		["silence"] = "Interface\\Icons\\Spell_Frost_IceShock",
 	}
 	
 	-- Remove the old fields
