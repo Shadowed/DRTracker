@@ -246,22 +246,25 @@ Data.spells = {
 	[18657] = "sleep",
 	[18658] = "sleep",
 	
-	-- Wyvern Sting
-	[19386] = "sleep",
-	[24132] = "sleep",
-	[24133] = "sleep",
-	[27068] = "sleep",
-	[49011] = "sleep",
-	[49012] = "sleep",
-	
-	--[[ MISC ]]--
-	-- Scatter Shot
-	[19503] = "scatters",
-	
 	-- Freezing Trap
 	[3355] = "freezetrap",
 	[14308] = "freezetrap",
 	[14309] = "freezetrap",
+	
+	-- Freezing Arrow
+	[60210] = "freezetrap",
+
+	-- Wyvern Sting
+	[19386] = "freezetrap",
+	[24132] = "freezetrap",
+	[24133] = "freezetrap",
+	[27068] = "freezetrap",
+	[49011] = "freezetrap",
+	[49012] = "freezetrap",
+	
+	--[[ MISC ]]--
+	-- Scatter Shot
+	[19503] = "scatters",
 	
 	-- Improved Conc Shot
 	[19410] = "impconc",
