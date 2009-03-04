@@ -11,12 +11,18 @@ function DRTracker:OnInitialize()
 		profile = {
 			scale = 1.0,
 			width = 180,
+			maxRows = 50,
 			redirectTo = "",
 			texture = "BantoBar",
+			fontName = "Friz Quadrata TT",
+			icon = "LEFT",
+			redirectTo = "",
 			showAnchor = false,
 			showName = true,
 			showNPC = true,
 			growUp = false,
+			fontSize = 12,
+			fadeTime = 0.5,
 			
 			disabled = {EnemyDRChanged = {}, FriendlyDRChanged = {}},
 			
@@ -27,7 +33,7 @@ function DRTracker:OnInitialize()
 
 	self.db = LibStub:GetLibrary("AceDB-3.0"):New("DRTrackerDB", self.defaults)
 
-	self.revision = tonumber(string.match("$Revision: 678 $", "(%d+)") or 1)
+	self.revision = tonumber(string.match("$Revision$", "(%d+)") or 1)
 
 	self.icons = {
 		["rndstun"] = "Interface\\Icons\\INV_Mace_02",
@@ -59,17 +65,14 @@ function DRTracker:OnInitialize()
 
 	-- Media
 	SML = LibStub:GetLibrary("LibSharedMedia-3.0")
-	SML.RegisterCallback(self, "LibSharedMedia_Registered", "TextureRegistered")
+	SML.RegisterCallback(self, "LibSharedMedia_Registered", "MediaRegistered")
 	
 	-- Timer bars
 	GTBLib = LibStub:GetLibrary("GTB-1.0")
 	GTBGroup = GTBLib:RegisterGroup("DRTracker", SML:Fetch(SML.MediaType.STATUSBAR, self.db.profile.texture))
 	GTBGroup:RegisterOnMove(self, "OnBarMove")
-	GTBGroup:SetScale(self.db.profile.scale)
-	GTBGroup:SetWidth(self.db.profile.width)
-	GTBGroup:SetDisplayGroup(self.db.profile.redirectTo ~= "" and self.db.profile.redirectTo or nil)
-	GTBGroup:SetAnchorVisible(self.db.profile.showAnchor)
-	GTBGroup:SetBarGrowth(self.db.profile.growUp and "UP" or "DOWN")
+	
+	self:Reload()
 
 	if( self.db.profile.position ) then
 		GTBGroup:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", self.db.profile.position.x, self.db.profile.position.y)
@@ -94,7 +97,6 @@ function DRTracker:Enable()
 end
 
 function DRTracker:Disable()
-	GTBGroup:UnregisterAllBars()
 	self:UnregisterAllEvents()
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA")
@@ -148,6 +150,7 @@ function DRTracker:ZONE_CHANGED_NEW_AREA()
 		if( self.db.profile.inside[type] ) then
 			self:Enable()
 		else
+			GTBGroup:UnregisterAllBars()
 			self:Disable()
 		end
 	end
@@ -179,6 +182,11 @@ function DRTracker:Reload()
 	GTBGroup:SetDisplayGroup(self.db.profile.redirectTo ~= "" and self.db.profile.redirectTo or nil)
 	GTBGroup:SetAnchorVisible(self.db.profile.showAnchor)
 	GTBGroup:SetBarGrowth(self.db.profile.growUp and "UP" or "DOWN")
+	GTBGroup:SetMaxBars(self.db.profile.maxRows)
+	GTBGroup:SetFont(SML:Fetch(SML.MediaType.FONT, self.db.profile.fontName), self.db.profile.fontSize)
+	GTBGroup:SetTexture(SML:Fetch(SML.MediaType.STATUSBAR, self.db.profile.texture))
+	GTBGroup:SetFadeTime(self.db.profile.fadeTime)
+	GTBGroup:SetIconPosition(self.db.profile.icon)
 end
 
 function DRTracker:OnBarMove(parent, x, y)
@@ -190,12 +198,13 @@ function DRTracker:OnBarMove(parent, x, y)
 	DRTracker.db.profile.position.y = y
 end
 
-function DRTracker:TextureRegistered(event, mediaType, key)
-	if( mediaType == SML.MediaType.STATUSBAR and DRTracker.db.profile.texture == key ) then
+function DRTracker:MediaRegistered(event, mediaType, key)
+	if( mediaType == SML.MediaType.STATUSBAR and self.db.profile.texture == key ) then
 		GTBGroup:SetTexture(SML:Fetch(SML.MediaType.STATUSBAR, self.db.profile.texture))
+	elseif( mediaType == SML.MediaType.FONT and self.db.profile.fontName ) then
+		GTBGroup:SetFont(SML:Fetch(SML.MediaType.FONT, self.db.profile.fontName), self.db.profile.fontSize)
 	end
 end
-
 
 -- DR TRACKING
 local trackedPlayers = {}

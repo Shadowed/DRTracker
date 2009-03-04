@@ -23,31 +23,36 @@ end
 
 -- GUI
 local function set(info, value)
-	local arg1, arg2, arg3 = string.split(".", info.arg)
-	if( tonumber(arg2) ) then arg2 = tonumber(arg2) end
-	
-	if( arg2 and arg3 ) then
-		DRTracker.db.profile[arg1][arg2][arg3] = value
-	elseif( arg2 ) then
-		DRTracker.db.profile[arg1][arg2] = value
+	if( info.arg ) then
+		local cat, subCat, key = string.split(".", info.arg)
+		DRTracker.db.profile[cat][subCat][key] = value
 	else
-		DRTracker.db.profile[arg1] = value
+		DRTracker.db.profile[info[(#info)]] = value
 	end
 	
 	DRTracker:Reload()
 end
 
 local function get(info)
-	local arg1, arg2, arg3 = string.split(".", info.arg)
-	if( tonumber(arg2) ) then arg2 = tonumber(arg2) end
-	
-	if( arg2 and arg3 ) then
-		return DRTracker.db.profile[arg1][arg2][arg3]
-	elseif( arg2 ) then
-		return DRTracker.db.profile[arg1][arg2]
-	else
-		return DRTracker.db.profile[arg1]
+	if( info.arg ) then
+		local cat, subCat, key = string.split(".", info.arg)
+		return DRTracker.db.profile[cat][subCat][key]
 	end
+
+	return DRTracker.db.profile[info[(#info)]]
+end
+
+local function setNumber(info, value)
+	set(info, tonumber(value))
+end
+
+local function setMulti(info, state, value)
+	DRTracker.db.profile[info[(#info)]][state] = value
+	DRTracker:Reload()
+end
+
+local function getMulti(info, state)
+	return DRTracker.db.profile[info[(#info)]][state]
 end
 
 local function reverseSet(info, value)
@@ -58,38 +63,17 @@ local function reverseGet(info, value)
 	return not get(info)
 end
 
-local function setNumber(info, value)
-	set(info, tonumber(value))
-end
+-- Return all fonts
+local fonts = {}
+function Config:GetFonts()
+	for k in pairs(fonts) do fonts[k] = nil end
 
-local function setMulti(info, value, state)
-	local arg1, arg2, arg3 = string.split(".", info.arg)
-	if( tonumber(arg2) ) then arg2 = tonumber(arg2) end
-
-	if( arg2 and arg3 ) then
-		DRTracker.db.profile[arg1][arg2][arg3][value] = state
-	elseif( arg2 ) then
-		DRTracker.db.profile[arg1][arg2][value] = state
-	else
-		DRTracker.db.profile[arg1][value] = state
+	for _, name in pairs(SML:List(SML.MediaType.FONT)) do
+		fonts[name] = name
 	end
-
-	DRTracker:Reload()
-end
-
-local function getMulti(info, value)
-	local arg1, arg2, arg3 = string.split(".", info.arg)
-	if( tonumber(arg2) ) then arg2 = tonumber(arg2) end
 	
-	if( arg2 and arg3 ) then
-		return DRTracker.db.profile[arg1][arg2][arg3][value]
-	elseif( arg2 ) then
-		return DRTracker.db.profile[arg1][arg2][value]
-	else
-		return DRTracker.db.profile[arg1][value]
-	end
+	return fonts
 end
-
 
 -- Return all registered SML textures
 local textures = {}
@@ -200,90 +184,147 @@ local function loadOptions()
 		set = set,
 		handler = Config,
 		args = {
-			enabled = {
-				order = 0,
-				type = "toggle",
-				name = L["Show anchor"],
-				desc = L["Display timer anchor for moving around."],
-				width = "full",
-				arg = "showAnchor",
-			},
-			showName = {
+			general = {
 				order = 1,
-				type = "toggle",
-				name = L["Only show trigger name in bars"],
-				width = "full",
-				arg = "showName",
+				type = "group",
+				inline = true,
+				name = L["General"],
+				args = {
+					showName = {
+						order = 1,
+						type = "toggle",
+						name = L["Only show trigger name in bars"],
+						width = "full",
+					},
+					showNPC = {
+						order = 8,
+						type = "toggle",
+						name = L["Show NPC diminishing returns"],
+						width = "full",
+					},
+					showType = {
+						order = 9,
+						type = "multiselect",
+						name = L["Show diminishing returns for"],
+						desc = L["Allows you to set if diminishing returns should be shown for friendly players and/or enemy players. Use show self if you only want your DRs but not all friendly players."],
+						values = {["enemy"] = L["Show enemies"], ["friendly"] = L["Show friendlies"], ["self"] = L["Show self"]},
+						set = setMulti,
+						get = getMulti,
+						width = "full",
+					},
+					sep = {
+						order = 11,
+						name = "",
+						type = "description",
+					},
+					inside = {
+						order = 12,
+						type = "multiselect",
+						name = L["Enable DRTracker inside"],
+						desc = L["Allows you to choose which scenarios this mod should be enabled in."],
+						values = {["none"] = L["Everywhere else"], ["pvp"] = L["Battlegrounds"], ["arena"] = L["Arenas"], ["raid"] = L["Raid instances"], ["party"] = L["Party instances"]},
+						set = setMulti,
+						get = getMulti,
+					},
+				}
 			},
-			growUp = {
-				order = 1,
-				type = "toggle",
-				name = L["Grow display up"],
-				desc = L["Instead of adding everything from top to bottom, timers will be shown from bottom to top."],
-				width = "full",
-				arg = "growUp"
+			bar = {
+				order = 2,
+				type = "group",
+				inline = true,
+				name = L["Bar display"],
+				args = {
+					showAnchor = {
+						order = 0,
+						type = "toggle",
+						name = L["Show anchor"],
+						desc = L["Instead of adding everything from top to bottom, timers will be shown from bottom to top."],
+					},
+					growUp = {
+						order = 1,
+						type = "toggle",
+						name = L["Grow display up"],
+						desc = L["Instead of adding everything from top to bottom, timers will be shown from bottom to top."],
+					},
+					sep = {
+						order = 3,
+						name = "",
+						type = "description",
+					},
+					redirectTo = {
+						order = 8,
+						type = "select",
+						name = L["Redirect bars to group"],
+						desc = L["Group name to redirect bars to, this lets you show the mods timers under another addons bar group. Requires the bars to be created using GTB."],
+						values = "GetGroups",
+						width = "full",
+					},
+					icon = {
+						order = 5,
+						type = "select",
+						name = L["Icon position"],
+						values = {["LEFT"] = L["Left"], ["RIGHT"] = L["Right"]},
+					},
+					texture = {
+						order = 6,
+						type = "select",
+						name = L["Texture"],
+						dialogControl = "LSM30_Statusbar",
+						values = "GetTextures",
+					},
+					sep = {
+						order = 8,
+						name = "",
+						type = "description",
+					},
+					fadeTime = {
+						order = 9,
+						type = "range",
+						name = L["Fade time"],
+						min = 0, max = 2, step = 0.1,
+					},
+					scale = {
+						order = 11,
+						type = "range",
+						name = L["Display scale"],
+						min = 0, max = 2, step = 0.01,
+					},
+					maxRows = {
+						order = 12,
+						type = "range",
+						name = L["Max timers"],
+						min = 1, max = 100, step = 1,
+					},
+					width = {
+						order = 13,
+						type = "range",
+						name = L["Width"],
+						min = 50, max = 300, step = 1,
+						set = setNumber,
+					},
+				},
 			},
-			scale = {
+			text = {
 				order = 3,
-				type = "range",
-				name = L["Display scale"],
-				desc = L["How big the actual timers should be."],
-				min = 0, max = 2, step = 0.1,
-				set = setNumber,
-				arg = "scale",
-			},
-			barWidth = {
-				order = 4,
-				type = "range",
-				name = L["Bar width"],
-				min = 0, max = 300, step = 1,
-				set = setNumber,
-				arg = "width",
-			},
-			barName = {
-				order = 5,
-				type = "select",
-				name = L["Bar texture"],
-				values = "GetTextures",
-				dialogControl = 'LSM30_Statusbar',
-				arg = "texture",
-			},
-			location = {
-				order = 6,
-				type = "select",
-				name = L["Redirect bars to group"],
-				desc = L["Group name to redirect bars to, this lets you show DRTracker timers under another addons bar group. Requires the bars to be created using GTB."],
-				values = "GetGroups",
-				arg = "redirectTo",
-			},
-			enabledIn = {
-				order = 7,
-				type = "multiselect",
-				name = L["Enable DRTracker inside"],
-				desc = L["Allows you to set what scenario's DRTracker should be enabled inside."],
-				values = enabledIn,
-				set = setMulti,
-				get = getMulti,
-				width = "full",
-				arg = "inside"
-			},
-			showNPC = {
-				order = 8,
-				type = "toggle",
-				name = L["Show NPC diminishing returns"],
-				width = "full",
-				arg = "showNPC",
-			},
-			showType = {
-				order = 9,
-				type = "multiselect",
-				name = L["Show diminishing returns for"],
-				desc = L["Allows you to set if diminishing returns should be shown for friendly players and/or enemy players. Use show self if you only want your DRs but not all friendly players."],
-				values = {["enemy"] = L["Show enemies"], ["friendly"] = L["Show friendlies"], ["self"] = L["Show self"]},
-				set = setMulti,
-				get = getMulti,
-				width = "full",
-				arg = "showType"
+				type = "group",
+				inline = true,
+				name = L["Text"],
+				args = {
+					fontSize = {
+						order = 1,
+						type = "range",
+						name = L["Size"],
+						min = 1, max = 20, step = 1,
+						set = setNumber,
+					},
+					fontName = {
+						order = 2,
+						type = "select",
+						name = L["Font"],
+						dialogControl = "LSM30_Font",
+						values = "GetFonts",
+					},
+				},
 			},
 		},
 	}

@@ -2,7 +2,7 @@
 ## Title: DR Tracker
 ## Notes: Diminishing returns tracker
 ## Author: Mayen
-## Version: $Revision: 666 $
+## Version: $Revision$
 ## SavedVariables: DRTrackerDB
 ## OptionalDeps: LibStub, GTB, DRData-1.0, Ace3
 

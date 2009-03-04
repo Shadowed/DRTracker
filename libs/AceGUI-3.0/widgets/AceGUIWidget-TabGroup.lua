@@ -24,15 +24,13 @@ local AceGUI = LibStub("AceGUI-3.0")
 
 ]]
 
-local WotLK = select(4, GetBuildInfo()) >= 30000
-
 --------------------------
 -- Tab Group            --
 --------------------------
 
 do
 	local Type = "TabGroup"
-	local Version = 15
+	local Version = 17
 
 	local PaneBackdrop  = {
 		bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
@@ -57,12 +55,7 @@ do
 	
 	local function Tab_SetText(self, text)
 		self:_SetText(text)
-		-- TODO: Remove when 3.0 hits live
-		if WotLK then
-			PanelTemplates_TabResize(self, 0)
-		else
-			PanelTemplates_TabResize(0, self)
-		end
+		PanelTemplates_TabResize(self, 0)
 	end
 	
 	local function UpdateTabLook(self)
@@ -101,6 +94,10 @@ do
 		self:Fire("OnTabLeave", self.tabs[this.id].value, this)
 	end
 	
+	local function Tab_OnShow(this)
+		_G[this:GetName().."HighlightTexture"]:SetWidth(this:GetTextWidth() + 30)
+	end
+	
 	local function CreateTab(self, id)
 		local tabname = "AceGUITabGroup"..self.num.."Tab"..id
 		local tab = CreateFrame("Button",tabname,self.border,"OptionsFrameTabButtonTemplate")
@@ -110,6 +107,7 @@ do
 		tab:SetScript("OnClick",Tab_OnClick)
 		tab:SetScript("OnEnter",Tab_OnEnter)
 		tab:SetScript("OnLeave",Tab_OnLeave)
+		tab:SetScript("OnShow", Tab_OnShow)
 		
 		tab._SetText = tab.SetText
 		tab.SetText = Tab_SetText
@@ -193,7 +191,7 @@ do
 			tab:SetDisabled(v.disabled)
 			tab.value = v.value
 			
-			widths[i] = tab:GetWidth() - 10 --tabs are anchored 10 pixels from the right side of the previous one to reduce spacing
+			widths[i] = tab:GetWidth() - 6 --tabs are anchored 10 pixels from the right side of the previous one to reduce spacing, but add a fixed 4px padding for the text
 		end
 		
 		--First pass, find the minimum number of rows needed to hold all tabs and the initial tab layout
@@ -207,7 +205,7 @@ do
 				rowwidths[numrows] = usedwidth + 10 --first tab in each row takes up an extra 10px
 				rowends[numrows] = i - 1
 				numrows = numrows + 1
-				usedwidth = 0		
+				usedwidth = 0
 			end
 			usedwidth = usedwidth + widths[i]
 		end
@@ -236,22 +234,23 @@ do
 				local tab = tabs[tabno]
 				tab:ClearAllPoints()
 				if first then
-					tab:SetPoint("TOPLEFT",self.frame,"TOPLEFT",0,-7-(row-1)*20 )
+					tab:SetPoint("TOPLEFT", self.frame, "TOPLEFT", 0, -7-(row-1)*20 )
 					first = false
 				else
-					tab:SetPoint("LEFT",tabs[tabno-1],"RIGHT",-10,0)
+					tab:SetPoint("LEFT", tabs[tabno-1], "RIGHT", -10, 0)
 				end
 			end
-			--equal padding for each tab to fill the available width
-			local padding = (width - rowwidths[row]) / (endtab - starttab+1)
+			
+			-- equal padding for each tab to fill the available width,
+			-- if the used space is above 75% already
+			local padding = 0
+			if not (numrows == 1 and rowwidths[1] < width*0.75) then
+				padding = (width - rowwidths[row]) / (endtab - starttab+1)
+			end
+			
 			for i = starttab, endtab do
-				-- TODO: Remove when 3.0 hits live
-				if WotLK then
-					PanelTemplates_TabResize(tabs[i], padding)
-				else
-					PanelTemplates_TabResize(padding, tabs[i])
-				end
-			end	
+				PanelTemplates_TabResize(tabs[i], padding + 4)
+			end
 			starttab = endtab + 1
 		end
 		

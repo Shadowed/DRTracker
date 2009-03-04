@@ -1,9 +1,10 @@
---[[
-AceConfigDialog-3.0
+--- AceConfigDialog-3.0 generates AceGUI-3.0 based windows based on option tables.
+-- @class file
+-- @name AceConfigDialog-3.0
+-- @release $Id: AceConfigDialog-3.0.lua 736 2009-02-14 11:13:43Z nevcairiel $
 
-]]
 local LibStub = LibStub
-local MAJOR, MINOR = "AceConfigDialog-3.0", 25
+local MAJOR, MINOR = "AceConfigDialog-3.0", 26
 local lib = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not lib then return end
@@ -581,6 +582,7 @@ local function confirmPopup(appName, rootframe, basepath, info, message, func, .
 		if dialog and oldstrata then
 			dialog:SetFrameStrata(oldstrata)
 		end
+		lib:Open(appName, rootframe, basepath and unpack(basepath))
 		del(info)
 	end
 	for i = 1, select('#', ...) do
