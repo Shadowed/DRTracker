@@ -1,4 +1,4 @@
-## Interface: 30000
+## Interface: 30100
 ## Title: Lib: Graphical Timer Bars (GTB) - 1.0
 ## Notes: Graphical timer bars libray
 ## Author: Mayen
