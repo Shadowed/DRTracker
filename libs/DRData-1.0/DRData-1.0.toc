@@ -1,4 +1,4 @@
-## Interface: 30000
+## Interface: 30100
 ## Title: Lib: Diminishing Returns Data-1.0
 ## Notes: DB of spellIDs -> DR category
 ## Author: Mayen

@@ -1,5 +1,5 @@
 local major = "GTB-1.0"
-local minor = tonumber(string.match("$Revision: 1242 $", "(%d+)") or 1)
+local minor = tonumber(string.match("$Revision: 1257 $", "(%d+)") or 1)
 
 assert(LibStub, string.format("%s requires LibStub.", major))
 
@@ -38,6 +38,7 @@ end
 -- GTB Library
 GTB.framePool = GTB.framePool or {}
 GTB.groups = GTB.groups or {}
+GTB.defaultFontPath = GameFontHighlight:GetFont()
 
 local framePool = GTB.framePool
 local groups = GTB.groups
@@ -81,6 +82,8 @@ end
 
 -- Release it to be reused later
 local function releaseFrame(frame)
+	frame.removed = nil
+	
 	-- Stop updates
 	frame:SetScript("OnUpdate", nil)
 	frame:EnableMouse(false)
@@ -127,7 +130,9 @@ local function fadeoutBar(self)
 	-- Don't fade at all, remove right now
 	if( group.fadeTime <= 0 ) then
 		group:UnregisterBar(self.barID, true)	
-		triggerFadeCallback(groups[self.originalOwner])
+		if( not self.removed ) then
+			triggerFadeCallback(groups[self.originalOwner])
+		end
 		return
 	end
 	
@@ -276,7 +281,7 @@ function GTB:RegisterGroup(name, texture)
 	argcheck(texture, 2, "string")
 	assert(3, not groups[name], L["GROUP_EXISTS"], name)
 
-	local obj = {name = name, frame = CreateFrame("Frame", nil, UIParent), fontSize = 11, height = 16, obj = obj, bars = {}, usedBars = {}}
+	local obj = {name = name, frame = CreateFrame("Frame", nil, UIParent), fontSize = 12, height = 16, obj = obj, bars = {}, usedBars = {}}
 	
 	-- Inject our methods
 	for _, func in pairs(methods) do
@@ -454,19 +459,14 @@ function GTB.SetFont(group, path, size, style)
 	argcheck(style, 4, "string", "nil")
 	assert(3, group.name and groups[group.name], L["MUST_CALL"], "SetFont")
 	
-	group.fontSize = size
-	group.fontPath = path
+	group.fontSize = size or 11
+	group.fontPath = path or GTB.defaultFontPath
 	group.fontStyle = style
 	
-	-- Update running bars
-	local path, size, style = GameFontHighlight:GetFont()
-	path = group.fontPath or path
-	style = group.fontStyle or style
-	size = group.fontSize or size
-
+	-- Update any existing ones
 	for _, bar in pairs(group.bars) do
-		bar.timer:SetFont(path, size, style)
-		bar.text:SetFont(path, size, style)
+		bar.timer:SetFont(group.fontPath, group.fontSize, group.fontStyle)
+		bar.text:SetFont(group.fontPath, group.fontSize, group.fontStyle)
 	end
 end
 
@@ -622,19 +622,24 @@ function GTB.RegisterBar(group, id, text, seconds, startSeconds, icon, r, g, b)
 
 	-- Retrieve a frame thats either recycled, or a newly created one
 	local frame = getFrame()
-		
+	
+	-- Font path was not set, so use the default.
+	group.fontPath = group.fontPath or GTB.defaultFontPath
+	
 	-- So we can do sorting and positioning
 	table.insert(group.usedBars, frame)
 	
 	frame.timer:SetPoint("RIGHT", frame, "RIGHT", -1, 0)
-	frame.timer:SetText(seconds)
 	frame.timer:SetHeight(group.height)
+	frame.timer:SetFont(group.fontPath, group.fontSize, group.fontStyle)
+	frame.timer:SetText(seconds)
 	
 	frame.text:SetPoint("LEFT", frame, "LEFT", 1, 0)
 	frame.text:SetHeight(group.height)
 	frame.text:SetWidth(group.width - frame.timer:GetWidth() - 5)
+	frame.text:SetFont(group.fontPath, group.fontSize, group.fontStyle)
 	frame.text:SetText(text)
-		
+	
 	-- Update icon
 	if( icon ) then
 		frame.icon:SetTexture(icon)
@@ -704,7 +709,7 @@ end
 
 -- Remove all bars
 function GTB.UnregisterAllBars(group)
-	assert(3, group.name and groups[group.name], L["MUST_CALL"], "UnregisteRAllBars")
+	assert(3, group.name and groups[group.name], L["MUST_CALL"], "UnregisterAllBars")
 	
 	-- Check if we're supposed to redirect this to another group, and that the group exists
 	if( group.redirectTo and groups[group.redirectTo] ) then
@@ -747,6 +752,7 @@ function GTB.UnregisterBar(group, id, noFade)
 			if( noFade or group.fadeTime <= 0 ) then
 				table.remove(group.usedBars, i)
 			else
+				group.usedBars[i].removed = true
 				fadeoutBar(group.usedBars[i])
 			end
 			break
@@ -756,6 +762,7 @@ function GTB.UnregisterBar(group, id, noFade)
 	if( noFade or group.fadeTime <= 0 ) then
 		releaseFrame(group.bars[id])
 		repositionFrames(group)
+		
 		group.bars[id] = nil
 	end
 	
