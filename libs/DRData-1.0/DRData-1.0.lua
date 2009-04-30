@@ -11,6 +11,42 @@ Data.RESET_TIME = 18
 
 -- List of spellID -> DR category
 Data.spells = {
+	--[[ TAUNT ]]--
+	-- Taunt
+	[53477] = "taunt",
+	-- Mocking Blow
+	[694] = "taunt",
+	-- Growl (Druid)
+	[6795] = "taunt",
+	-- Growl (Pet)
+	[2649] = "taunt",
+	[14916] = "taunt",
+	[14917] = "taunt",
+	[14918] = "taunt",
+	[14919] = "taunt",
+	[14920] = "taunt",
+	[14921] = "taunt",
+	[27047] = "taunt",
+	[61676] = "taunt",
+	-- Dark Command
+	[56222] = "taunt",
+	-- Hand of Reckoning
+	[62124] = "taunt",
+	-- Righteous Defense
+	[31790] = "taunt",
+	-- Distracting Shot
+	[20736] = "taunt",
+	-- Challenging Shout
+	[1161] = "taunt",
+	-- Challenging Roar
+	[5209] = "taunt",
+	-- Death Grip
+	[49560] = "taunt",
+	-- Challenging Howl
+	[59671] = "taunt",
+	-- Angered Earth
+	[36213] = "taunt",
+	
 	--[[ DISORIENTS ]]--
 	-- Dragon's Breath
 	[31661] = "disorient",
@@ -290,6 +326,10 @@ Data.spells = {
 	[18657] = "sleep",
 	[18658] = "sleep",
 	
+	-- Banish
+	[710] = "sleep",
+	[18647] = "sleep",
+	
 	-- Freezing Trap
 	[3355] = "freezetrap",
 	[14308] = "freezetrap",
@@ -305,7 +345,7 @@ Data.spells = {
 	[27068] = "freezetrap",
 	[49011] = "freezetrap",
 	[49012] = "freezetrap",
-	
+		
 	--[[ MISC ]]--
 	-- Scatter Shot
 	[19503] = "scatters",
@@ -361,12 +401,14 @@ Data.typeNames = {
 	["impconc"] = "Imp Concussive Shot",
 	["charm"] = "Charms",
 	["silence"] = "Silences",
+	["taunt"] = "Taunts",
 }
 
 -- Categories that have DR in PvE as well as PvP
 Data.pveDRs = {
 	["ctrlstun"] = true,
 	["rndstun"] = true,
+	["taunt"] = true,
 	["cyclone"] = true,
 }
 
