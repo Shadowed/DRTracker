@@ -146,6 +146,9 @@ Data.spells = {
 	[64058] = "disarm",
 	
 	--[[ FEARS ]]--
+	-- Blind
+	[2094] = "fear",
+
 	-- Fear (Warlock)
 	[5782] = "fear",
 	[6213] = "fear",
@@ -285,9 +288,6 @@ Data.spells = {
 	[12798] = "rndstun",
 	
 	--[[ CYCLONE ]]--
-	-- Blind
-	[2094] = "cyclone",
-	
 	-- Cyclone
 	[33786] = "cyclone",
 	
@@ -389,7 +389,7 @@ Data.typeNames = {
 	["fear"] = "Fears",
 	["ctrlstun"] = "Controlled Stuns",
 	["rndstun"] = "Random Stuns",
-	["cyclone"] = "Cyclone/Blind",
+	["cyclone"] = "Cyclone",
 	["cheapshot"] = "Cheap Shot",
 	["chastise"] = "Chastise",
 	["scatters"] = "Scatter Shot",
