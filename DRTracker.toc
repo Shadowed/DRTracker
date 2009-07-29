@@ -2,9 +2,7 @@
 ## Title: DR Tracker
 ## Notes: Diminishing returns tracker
 ## Author: Mayen
-## Version: $Revision$
 ## SavedVariables: DRTrackerDB
-## OptionalDeps: LibStub, GTB, DRData-1.0, Ace3
 
 libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
@@ -20,8 +18,6 @@ libs\GTB-1.0\GTB-1.0.xml
 libs\DRData-1.0\DRData-1.0.xml
 
 localization.enUS.lua
-localization.deDE.lua
-localization.frFR.lua
 localization.zhCN.lua
 
 DRTracker.lua

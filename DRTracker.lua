@@ -1,9 +1,7 @@
 DRTracker = LibStub("AceAddon-3.0"):NewAddon("DRTracker", "AceEvent-3.0")
 
 local L = DRTrackerLocals
-
-local SML, instanceType, DRLib, GTBLib, GTBGroup, playerGUID
-
+local SML, instanceType, DRLib, DRData, GTBLib, GTBGroup, playerGUID
 local barID = {}
 
 function DRTracker:OnInitialize()
@@ -32,8 +30,6 @@ function DRTracker:OnInitialize()
 	}
 
 	self.db = LibStub:GetLibrary("AceDB-3.0"):New("DRTrackerDB", self.defaults)
-
-	self.revision = tonumber(string.match("$Revision$", "(%d+)") or 1)
 
 	self.icons = {
 		["rndstun"] = "Interface\\Icons\\INV_Mace_02",

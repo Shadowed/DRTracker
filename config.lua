@@ -153,8 +153,7 @@ local function createDRFilters(text, configKey)
 
 	-- Load spell list
 	local DRData = LibStub("DRData-1.0")
-	for cat in pairs(DRData:GetCategories()) do
-		local name = DRData:GetCategoryName(cat)
+	for cat, name in pairs(DRData:GetCategories()) do
 		config.args.list.args[cat] = {
 			order = 1,
 			type = "toggle",
@@ -382,7 +381,7 @@ register:SetScript("OnShow", function(self)
 		args = {
 			help = {
 				type = "description",
-				name = string.format("DRTracker r%d is a diminishing returns tracker for PvP", DRTracker.revision or 0),
+				name = "DRTracker is a diminishing returns tracker for PvP and PvE",
 			},
 		},
 	})
