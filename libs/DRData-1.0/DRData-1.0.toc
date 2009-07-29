@@ -1,8 +1,8 @@
 ## Interface: 30100
 ## Title: Lib: Diminishing Returns Data-1.0
-## Notes: DB of spellIDs -> DR category
+## Notes: Database of Diminishing return categories and general data
 ## Author: Mayen
+## X-Category: Library
 
-LibStub-1.0\LibStub-1.0.xml
-
+libs\LibStub\LibStub.lua
 DRData-1.0.xml
