@@ -1,5 +1,5 @@
 local major = "DRData-1.0"
-local minor = 1001
+local minor = 1002
 assert(LibStub, string.format("%s requires LibStub.", major))
 
 local Data = LibStub:NewLibrary(major, minor)
@@ -34,7 +34,7 @@ Data.RESET_TIME = 18
 Data.spells = {
 	--[[ TAUNT ]]--
 	-- Taunt (Warrior)
-	[53477] = "taunt",
+	[355] = "taunt",
 	-- Taunt (Pet)
 	[53477] = "taunt",
 	-- Mocking Blow
@@ -463,7 +463,7 @@ end
 
 -- Does this category DR in PvE?
 function Data:IsPVE(cat)
-	return cat and Data.pveDRs[cat] or nil
+	return cat and Data.pveDR[cat] or nil
 end
 
 -- List of categories
