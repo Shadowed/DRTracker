@@ -344,7 +344,17 @@ Data.spells = {
 	[9853] = "ctrlroot",
 	[26989] = "ctrlroot",
 	[53308] = "ctrlroot",
-
+	
+	-- Nature's Grasp (Uses different spellIDs than Entangling Roots for the same spell)
+	[19970] = "ctrlroot",
+	[19971] = "ctrlroot",
+	[19972] = "ctrlroot",
+	[19973] = "ctrlroot",
+	[19974] = "ctrlroot",
+	[19975] = "ctrlroot",
+	[27010] = "ctrlroot",
+	[53313] = "ctrlroot",
+	
 	-- Earthgrab (Storm, Earth and Fire talent)
 	[8377] = "ctrlroot",
 	[31983] = "ctrlroot",
