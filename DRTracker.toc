@@ -1,7 +1,7 @@
 ## Interface: 30200
 ## Title: DR Tracker
 ## Notes: Diminishing returns tracker
-## Author: Mayen
+## Author: Shadowed
 ## SavedVariables: DRTrackerDB
 
 libs\LibStub\LibStub.lua
